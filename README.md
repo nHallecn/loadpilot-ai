@@ -3,7 +3,7 @@
 **Autonomous Software Performance Investigator**  
 Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
-> Status: **Meta Muse Spark test-plan proposals and the in-process bounded experimental runner are implemented.** The sample service supports measured slow/optimized comparisons. A schema-validated, evidence-citing **AI diagnosis endpoint** is implemented on a feature branch. Persistent storage and the interactive testing dashboard are **not yet implemented**. All new project code is authored during the October 26–November 4, 2026 hackathon.
+> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis and an interactive Next.js dashboard (the dashboard is on `feat/interactive-dashboard` pending PR review). History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
 
 ## The problem
 
@@ -25,7 +25,7 @@ No arbitrary Internet-target load testing. No claim of an improvement without su
 ```text
 apps/
   api/      Fastify TypeScript API; health endpoint and protected AI plan route
-  web/      Next.js dashboard scaffold
+  web/      Next.js interactive dashboard and private API gateway
 
 docs/
   MVP.md           Scope and acceptance criteria
@@ -33,6 +33,7 @@ docs/
   META_MODEL_API.md Server-side Meta planner setup and security constraints
   EXPERIMENTS.md    Local benchmark and comparison walkthrough
   DIAGNOSTICS.md    Evidence-citing Meta AI diagnosis and independent verification
+  DASHBOARD.md      Codespaces setup, app workflow and security boundaries
 HACKATHON_CONTRIBUTIONS.md  Evidence log and third-party disclosure
 ```
 
@@ -45,7 +46,7 @@ pnpm install
 pnpm dev
 ```
 
-- Web: http://localhost:3000
+- Web: http://localhost:3000 (requires a separate dashboard access key; [setup](docs/DASHBOARD.md))
 - API health: http://localhost:4000/health
 - API readiness: http://localhost:4000/ai/status
 - AI plan proposal: POST http://localhost:4000/ai/plan (private bearer token required)
@@ -56,7 +57,7 @@ pnpm dev
 - Run tests: `pnpm test`
 - Typecheck: `pnpm typecheck`
 
-To activate Meta Model API locally, **export** `MODEL_API_KEY` and a strong random `LOADPILOT_DEMO_TOKEN` in the API server's environment. The starter does not auto-load `.env`; copying `.env.example` alone is insufficient. See [Meta Model API setup](docs/META_MODEL_API.md) for a tested-request example. Never commit API keys, expose them through `NEXT_PUBLIC_*`, or publish the Fastify demo API without stronger authentication and persistent rate limits.
+For local setup, configure `apps/api/.env` and run the Fastify server using `node --env-file=.env --import tsx src/server.ts` from `apps/api`. Configure `apps/web/.env.local` with **server-only** `LOADPILOT_BACKEND_TOKEN` (the API demo token) and a **different** `DASHBOARD_ACCESS_TOKEN` (minimum 24 characters), then run `pnpm dev` from `apps/web`. The web dashboard only uses a same-origin Next.js gateway and keeps secrets server-side. Follow the full [dashboard setup guide](docs/DASHBOARD.md). Never commit secrets or expose the demo backend publicly.
 
 The model issues **proposals only**; a separate deterministic runner executes only the bundled in-process demo API, and never loads user-supplied URLs. Run `node --env-file=.env scripts/demo-experiments.mjs` from `apps/api` to compare slow and optimized variants; add `--with-ai` to pay for one live Meta-generated plan, and/or `--diagnose` to pay for an evidence-checked Meta finding. See [Experiment runner](docs/EXPERIMENTS.md) and [AI diagnosis](docs/DIAGNOSTICS.md). The live Meta API connection was manually validated during development; CI uses mocked Meta responses. Avoid publishing this demo backend without production-grade authentication and quotas.
 
