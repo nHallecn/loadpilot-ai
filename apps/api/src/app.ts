@@ -5,11 +5,14 @@ import { createMetaPlanner, PlannerError, type Planner } from './ai/meta-planner
 import { ExperimentService } from './experiments/service.js';
 import { compareRequestSchema, experimentRequestSchema } from './experiments/schemas.js';
 import { z } from 'zod';
+import { createMetaDiagnostician, DiagnosticError, type Diagnostician } from './ai/meta-diagnostician.js';
+import { diagnosisRequestSchema, prepareEvidence } from './ai/diagnostic-evidence.js';
 
 type AppOptions = {
   planner?: Planner;
   demoToken?: string;
   experiments?: ExperimentService;
+  diagnostician?: Diagnostician;
 };
 
 function validBearer(header: string | undefined, expected: string) {
@@ -27,6 +30,11 @@ export function buildApp(options: AppOptions = {}) {
   const apiKey = process.env.MODEL_API_KEY ?? '';
   const planner = options.planner ??
     (apiKey ? createMetaPlanner({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
+  const diagnostician = options.diagnostician ??
+    (apiKey ? createMetaDiagnostician({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
+  const diagnosisCache = new Map<string, unknown>();
+  let diagnosisActive = false;
+  let lastUncachedDiagnosis = 0;
 
   app.get('/health', async () => ({ status: 'ok', service: 'loadpilot-api' }));
 
@@ -130,6 +138,86 @@ export function buildApp(options: AppOptions = {}) {
     if (!parsed.success) return reply.code(400).send({ error: 'Invalid comparison request' });
     const comparison = experiments.compare(parsed.data.beforeRunId, parsed.data.afterRunId);
     return comparison ? reply.send(comparison) : reply.code(404).send({ error: 'Completed runs not found' });
+  });
+
+  app.post('/ai/diagnose', async (request, reply) => {
+    if (!diagnostician || !demoToken) {
+      return reply.code(503).send({ error: 'AI diagnosis is not configured' });
+    }
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const parsed = diagnosisRequestSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Invalid diagnosis request' });
+    }
+
+    const { beforeRunId, afterRunId } = parsed.data;
+    const prepared = prepareEvidence(experiments, beforeRunId, afterRunId);
+    if (!prepared.ok) {
+      return reply.code(prepared.reason === 'not_found' ? 404 : 422).send({
+        error: prepared.reason === 'not_found'
+          ? 'Run not found'
+          : 'Diagnosis requires comparable completed slow/optimized runs with at least 5 samples each',
+      });
+    }
+
+    const key = beforeRunId + ':' + afterRunId;
+    const cached = diagnosisCache.get(key);
+    if (cached) return reply.send({ ...cached as object, cached: true });
+
+    // Per-process spend guard. Production requires durable user quotas and identity.
+    if (diagnosisActive || Date.now() - lastUncachedDiagnosis < 10000) {
+      return reply.code(429).send({ error: 'Diagnosis is busy or cooling down' });
+    }
+    diagnosisActive = true;
+    lastUncachedDiagnosis = Date.now();
+
+    try {
+      const { model, finding } = await diagnostician.diagnose(prepared.manifest);
+      // Re-check in case an injectable/test implementation bypassed model verification.
+      const { verifyDiagnosis } = await import('./ai/diagnostic-evidence.js');
+      if (!verifyDiagnosis(prepared.manifest, finding)) {
+        return reply.code(502).send({ error: 'AI diagnosis could not be verified' });
+      }
+      const evidenceSet = new Set(finding.evidenceIds);
+      const response = {
+        status: 'evidence_backed_hypothesis',
+        model,
+        beforeRunId,
+        afterRunId,
+        finding: {
+          category: finding.category,
+          confidence: finding.confidence,
+          explanation: finding.explanation,
+          evidenceIds: finding.evidenceIds,
+        },
+        citedEvidence: prepared.manifest.evidence.filter(({ id }) => evidenceSet.has(id)),
+        nextExperiment: { ...finding.nextExperiment, status: 'proposal_only' },
+        caveats: [
+          'Correlation between variants does not prove a single root cause.',
+          'Synthetic Fastify.inject measurements exclude public network latency.',
+          'Interpret the finding as a hypothesis, not an established fact.',
+        ],
+        cached: false,
+      };
+      diagnosisCache.set(key, response);
+      while (diagnosisCache.size > 12) {
+        const firstKey = diagnosisCache.keys().next().value;
+        if (firstKey) diagnosisCache.delete(firstKey);
+      }
+      return reply.code(200).send(response);
+    } catch (error) {
+      if (error instanceof DiagnosticError) {
+        const code = error.kind === 'rate_limited' ? 429 : error.kind === 'timeout' ? 504 : 502;
+        return reply.code(code).send({ error: 'AI diagnosis unavailable', reason: error.kind });
+      }
+      request.log.error({ type: 'unexpected_diagnosis_error' }, 'Diagnosis failed');
+      return reply.code(502).send({ error: 'AI diagnosis unavailable' });
+    } finally {
+      diagnosisActive = false;
+    }
   });
 
   return app;
