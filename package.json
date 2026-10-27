@@ -1,0 +1,12 @@
+{
+  "name": "loadpilot-ai",
+  "private": true,
+  "version": "0.0.1",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @loadpilot/api --filter @loadpilot/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @loadpilot/api test"
+  }
+}
