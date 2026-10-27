@@ -296,7 +296,7 @@ export default function HomePage() {
                     <MetricBox label="OPTIMIZED · P95" value={formatNumber(after.metrics.latencyMs.p95)+' ms'} detail={after.metrics.requestCount+' completed requests'} accent="mint"/>
                   </div>
                   <LatencyChart before={before} after={after}/>
-                  {comparison && <div className="improvement"><div><span>Observed p95 reduction</span><strong>{reduction===null?'—':formatNumber(reduction)+'%'}</strong><small>Controlled in-process demo comparison</small></div><div className="improvement-mark"><SymbolIcon kind="chart"/></div></div>}
+                  {comparison && <div className="improvement"><div><span>Observed p95 reduction</span><strong>{reduction == null?'—':formatNumber(reduction)+'%'}</strong><small>Controlled in-process demo comparison</small></div><div className="improvement-mark"><SymbolIcon kind="chart"/></div></div>}
                   <div className="comparison-row"><div><span>Slow throughput</span><strong>{formatNumber(before.metrics.observedRps)} req/s</strong></div><div><span>Optimized throughput</span><strong>{formatNumber(after.metrics.observedRps)} req/s</strong></div><div><span>Observed change</span><strong>{throughputPercent === null?'—':(throughputPercent>=0?'+':'')+formatNumber(throughputPercent)+'%'}</strong></div></div>
                   <p className="muted-note">Both variants also differ in simulated processing time. This comparison alone does not establish causality.</p>
                 </>
