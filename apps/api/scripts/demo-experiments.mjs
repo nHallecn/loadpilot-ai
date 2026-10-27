@@ -53,3 +53,12 @@ const comparison = await request('/experiments/compare', {
 });
 console.log('Before/after observations:', JSON.stringify(comparison, null, 2));
 console.log('Note: differences measured in an in-process demo are not proof of production performance.');
+
+if (process.argv.includes('--diagnose')) {
+  const report = await request('/ai/diagnose', {
+    beforeRunId: before.id,
+    afterRunId: after.id,
+  });
+  console.log('Evidence-backed AI diagnosis:', JSON.stringify(report, null, 2));
+  console.log('WARNING: This diagnosis is a hypothesis, not causal proof.');
+}
