@@ -32,7 +32,7 @@ export type AdjudicationVerdict =
   | 'insufficient_repeats'
   | 'consistent_demo_gap'
   | 'mixed_observations'
-  | 'no_repeatable_gap';
+  | 'no_pairs_meet_threshold';
 
 export type EvidenceManifest = {
   schemaVersion: 'loadpilot.trial-evidence.v1';
@@ -166,7 +166,7 @@ export function adjudicateTrials(records: Lookup, pairs: TrialPair[]): Adjudicat
   const verdict: AdjudicationVerdict =
     pairs.length < 3 ? 'insufficient_repeats' :
     improvements === 3 ? 'consistent_demo_gap' :
-    improvements === 0 ? 'no_repeatable_gap' :
+    improvements === 0 ? 'no_pairs_meet_threshold' :
     'mixed_observations';
 
   const manifest: EvidenceManifest = {
