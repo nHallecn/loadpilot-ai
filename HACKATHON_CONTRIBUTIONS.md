@@ -8,28 +8,29 @@ Meta Global AI Developer Hackathon, October 26–November 4, 2026.
 
 | Component | Status | Evidence |
 | --- | --- | --- |
-| Repository configuration and initial documentation | Scaffold created during event | Initial Git commit after publication |
-| Fastify health API | Scaffold created during event | Source and automated smoke test |
-| Next.js landing page | Scaffold created during event | Source and local browser |
+| Repository and documentation | Scaffold completed | Initial October 2026 commits |
+| Fastify health API | Scaffold completed | Source and health test |
+| Next.js landing page | Scaffold completed | Source |
+| Meta Model API planner | Implemented on feat/meta-model-api | AI module, strict schema and mocked adapter tests |
+| Protected AI plan endpoint | Implemented on feat/meta-model-api | /ai/status and /ai/plan with bearer gate |
 | Safe bounded load runner | Not started | TBD |
 | Metrics persistence | Not started | TBD |
-| Meta Model API integration | Not started | TBD |
-| AI investigation and hypothesis engine | Not started | TBD |
+| AI diagnosis and hypothesis engine | Not started | TBD |
 | Baseline/retest comparison | Not started | TBD |
 | Three-minute demonstration | Not started | TBD |
 
-## Prior experience and pre-existing projects
+## Pre-existing work
 
-The author has previously worked on a distributed load-testing platform. **No source code, media, or functionality from that project is included here.** Domain knowledge may inform the product design, but the demo must only show work created during this event.
+The author has developed a different distributed load-testing platform before the hackathon. **No project source, assets, or pre-existing functionality from that project is reused.** Domain experience informs this original work. The hackathon demo must show only new functionality.
 
-## External dependencies
+## External tools and dependencies
 
-Fastify, Next.js, React, TypeScript, Vitest, tsx and other packages listed in the manifests are third-party software. They are not claimed as original work. Respect their applicable licenses.
+Fastify, Next.js, React, TypeScript, Vitest, tsx, Zod, Node.js, pnpm and Meta Model API are existing third-party dependencies/services, not original contributions. See package manifests for package versions and applicable upstream licenses.
 
-## Evidence policy
+## Provenance and ethics
 
-- Use regular dated commits and document major functionality as it is built.
-- Identify third-party code, models, datasets, tools, starter templates, or assets in this file.
-- Show only implemented features in the final demo.
-- Keep API credentials, user data and private logs out of the public repository.
-- Record real evaluation results and distinguish measurements from AI-generated hypotheses.
+- Keep changes attributable through feature branches, PRs, and commit history.
+- Never commit API keys, other people's private logs, or unauthorized datasets.
+- Identify third-party libraries, templates and assets.
+- Differentiate demonstrated capabilities from future roadmap features.
+- Meta planner proposals must be validated and independently authorized before any execution.

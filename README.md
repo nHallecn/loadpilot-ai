@@ -3,7 +3,7 @@
 **Autonomous Software Performance Investigator**  
 Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
-> Status: project scaffold. Performance testing, diagnostics, and Meta Model API integration are **not implemented yet**. All project-specific code in this repository is intended to be authored during the October 26–November 4, 2026 hackathon.
+> Status: Meta Muse Spark **test-plan proposal integration has been implemented** on a feature branch. Actual load-test execution, diagnostic evidence collection and retesting are **not implemented**. Code is new work during the October 26–November 4, 2026 hackathon.
 
 ## The problem
 
@@ -24,12 +24,13 @@ No arbitrary Internet-target load testing. No claim of an improvement without su
 
 ```text
 apps/
-  api/      Fastify TypeScript API; health endpoint scaffold
+  api/      Fastify TypeScript API; health endpoint and protected AI plan route
   web/      Next.js dashboard scaffold
 
 docs/
   MVP.md           Scope and acceptance criteria
   ARCHITECTURE.md  Planned components and trust boundaries
+  META_MODEL_API.md Server-side Meta planner setup and security constraints
 HACKATHON_CONTRIBUTIONS.md  Evidence log and third-party disclosure
 ```
 
@@ -44,10 +45,14 @@ pnpm dev
 
 - Web: http://localhost:3000
 - API health: http://localhost:4000/health
+- API readiness: http://localhost:4000/ai/status
+- AI plan proposal: POST http://localhost:4000/ai/plan (private bearer token required)
 - Run tests: `pnpm test`
 - Typecheck: `pnpm typecheck`
 
-Copy `.env.example` to `.env` if you need to configure environment variables. **Never commit your Meta Model API key.** The provider integration is planned, not yet connected.
+To activate Meta Model API locally, **export** `MODEL_API_KEY` and a strong random `LOADPILOT_DEMO_TOKEN` in the API server's environment. The starter does not auto-load `.env`; copying `.env.example` alone is insufficient. See [Meta Model API setup](docs/META_MODEL_API.md) for a tested-request example. Never commit API keys, expose them through `NEXT_PUBLIC_*`, or publish the Fastify demo API without stronger authentication and persistent rate limits.
+
+API requests are **proposals only**: the model does not execute tests. The integration uses the documented `muse-spark-1.3` Chat Completions API with strict JSON Schema and independent Zod checks. Automated mocked tests have been written, but no real Meta API call or local dependency-install/test run has been performed yet.
 
 ## Hackathon integrity
 
