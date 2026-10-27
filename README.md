@@ -3,7 +3,7 @@
 **Autonomous Software Performance Investigator**  
 Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
-> Status: Meta Muse Spark **test-plan proposal integration has been implemented** on a feature branch. Actual load-test execution, diagnostic evidence collection and retesting are **not implemented**. Code is new work during the October 26–November 4, 2026 hackathon.
+> Status: **Meta Muse Spark test-plan proposals and the in-process bounded experimental runner are implemented.** The sample service supports measured slow/optimized comparisons. AI analysis of run evidence, persistent storage, and the interactive testing dashboard are **not yet implemented**. All new project code is authored during the October 26–November 4, 2026 hackathon.
 
 ## The problem
 
@@ -31,6 +31,7 @@ docs/
   MVP.md           Scope and acceptance criteria
   ARCHITECTURE.md  Planned components and trust boundaries
   META_MODEL_API.md Server-side Meta planner setup and security constraints
+  EXPERIMENTS.md    Local benchmark and comparison walkthrough
 HACKATHON_CONTRIBUTIONS.md  Evidence log and third-party disclosure
 ```
 
@@ -47,12 +48,15 @@ pnpm dev
 - API health: http://localhost:4000/health
 - API readiness: http://localhost:4000/ai/status
 - AI plan proposal: POST http://localhost:4000/ai/plan (private bearer token required)
+- Run local experiment: POST http://localhost:4000/experiments/run (private bearer token required)
+- Retrieve history: GET http://localhost:4000/experiments
+- Compare two runs: POST http://localhost:4000/experiments/compare
 - Run tests: `pnpm test`
 - Typecheck: `pnpm typecheck`
 
 To activate Meta Model API locally, **export** `MODEL_API_KEY` and a strong random `LOADPILOT_DEMO_TOKEN` in the API server's environment. The starter does not auto-load `.env`; copying `.env.example` alone is insufficient. See [Meta Model API setup](docs/META_MODEL_API.md) for a tested-request example. Never commit API keys, expose them through `NEXT_PUBLIC_*`, or publish the Fastify demo API without stronger authentication and persistent rate limits.
 
-API requests are **proposals only**: the model does not execute tests. The integration uses the documented `muse-spark-1.3` Chat Completions API with strict JSON Schema and independent Zod checks. Automated mocked tests have been written, but no real Meta API call or local dependency-install/test run has been performed yet.
+The model issues **proposals only**; a separate deterministic runner executes only the bundled in-process demo API, and never loads user-supplied URLs. Run `node --env-file=.env scripts/demo-experiments.mjs` from `apps/api` to compare slow and optimized variants; add `--with-ai` to pay for one live Meta-generated plan. See [Experiment runner](docs/EXPERIMENTS.md). The live Meta API connection was manually validated during development; CI uses mocked Meta responses. Avoid publishing this demo backend without production-grade authentication and quotas.
 
 ## Hackathon integrity
 
