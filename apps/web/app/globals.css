@@ -273,3 +273,31 @@ h3 { font-size: 21px; letter-spacing: -.8px; margin-bottom: 7px; }
   .topbar-right { font-size: 9px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; } }
+
+
+/* Milestone 5: reproducibility and evidence export */
+.repeats-panel { margin-top: 20px; }
+.repeat-progress { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; margin: 24px 0 18px; }
+.repeat-step { display: flex; align-items: center; gap: 13px; padding: 16px; border-radius: 10px; background: #101927; border: 1px solid #2d3848; }
+.repeat-step.repeat-done { background: #122923; border-color: #356758; }
+.repeat-number { display: grid; place-items: center; width: 31px; height: 31px; flex-shrink: 0; border-radius: 50%; background: #2c3449; color: #b4a4ff; font-size: 12px; font-weight: 800; }
+.repeat-done .repeat-number { background: #2b6553; color: #b3fbe0; }
+.repeat-step strong { display: block; font-size: 12px; }
+.repeat-step small { display: block; color: #8397ac; font-size: 10px; margin-top: 4px; }
+.repeat-summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(110deg, #1c2834, #182a2b); border: 1px solid #3c6560; border-radius: 12px; padding: 19px; margin: 15px 0 20px; }
+.repeat-summary h4 { text-transform: capitalize; font-size: 20px; margin: 8px 0; color: #bcefdc; }
+.repeat-summary p { color: #9bb9b2; line-height: 1.6; font-size: 11px; margin: 0; }
+.repeat-median { flex-shrink: 0; text-align: right; }
+.repeat-median small { display: block; font-size: 9px; font-weight: 700; color: #80baa9; letter-spacing: .8px; }
+.repeat-median strong { display: block; font-family: 'Space Grotesk', var(--font); font-size: 29px; color: #74e5c5; margin-top: 7px; }
+.repeat-export { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 15px; margin-top: 20px; padding: 17px; border-radius: 9px; border: 1px solid #3b4658; background: #101725; }
+.repeat-export code { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 10px; color: #c4baff; overflow-wrap: anywhere; word-break: break-all; display: block; max-width: 570px; }
+.repeat-export .button { flex-shrink: 0; }
+@media (max-width: 640px) {
+  .repeats-panel .history-top { flex-direction: column; align-items: stretch; }
+  .repeats-panel .history-top .button { white-space: normal; }
+  .repeat-progress { gap: 6px; }
+  .repeat-step { padding: 9px; gap: 6px; flex-direction: column; text-align: center; }
+  .repeat-summary { align-items: flex-start; flex-direction: column; }
+  .repeat-median { text-align: left; }
+}
