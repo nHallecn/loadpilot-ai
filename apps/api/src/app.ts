@@ -7,6 +7,7 @@ import { compareRequestSchema, experimentRequestSchema } from './experiments/sch
 import { z } from 'zod';
 import { createMetaDiagnostician, DiagnosticError, type Diagnostician } from './ai/meta-diagnostician.js';
 import { diagnosisRequestSchema, prepareEvidence } from './ai/diagnostic-evidence.js';
+import { adjudicateTrials, trialPairsSchema } from './experiments/adjudication.js';
 
 type AppOptions = {
   planner?: Planner;
@@ -138,6 +139,31 @@ export function buildApp(options: AppOptions = {}) {
     if (!parsed.success) return reply.code(400).send({ error: 'Invalid comparison request' });
     const comparison = experiments.compare(parsed.data.beforeRunId, parsed.data.afterRunId);
     return comparison ? reply.send(comparison) : reply.code(404).send({ error: 'Completed runs not found' });
+  });
+
+  /**
+   * Read-only adjudication: no new workload or paid AI call. Returns a checksum
+   * with a complete source-run snapshot so it can be exported and independently
+   * verified after in-memory history expires.
+   */
+  app.post('/experiments/adjudicate', async (request, reply) => {
+    if (!demoToken) return reply.code(503).send({ error: 'Experiment service not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const parsed = trialPairsSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Invalid trial pairs', issues: parsed.error.flatten() });
+    }
+    const result = adjudicateTrials(experiments, parsed.data.pairs);
+    if (!result.ok) {
+      return reply.code(result.reason === 'missing_run' ? 404 : 422).send({
+        error: result.reason === 'missing_run'
+          ? 'Run not found (history is in-memory only)'
+          : 'Trials must be distinct, completed, ordered slow/optimized pairs with matching test parameters and at least 10 samples per run',
+      });
+    }
+    return reply.code(200).send(result.report);
   });
 
   app.post('/ai/diagnose', async (request, reply) => {

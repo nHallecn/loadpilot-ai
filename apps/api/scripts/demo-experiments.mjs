@@ -47,6 +47,7 @@ const run = async (variant) => {
 
 const before = await run('slow');
 const after = await run('optimized');
+const pairs = [{ beforeRunId: before.id, afterRunId: after.id }];
 const comparison = await request('/experiments/compare', {
   beforeRunId: before.id,
   afterRunId: after.id,
@@ -61,4 +62,23 @@ if (process.argv.includes('--diagnose')) {
   });
   console.log('Evidence-backed AI diagnosis:', JSON.stringify(report, null, 2));
   console.log('WARNING: This diagnosis is a hypothesis, not causal proof.');
+}
+
+if (process.argv.includes('--repeat')) {
+  const { mkdirSync, writeFileSync } = await import('node:fs');
+  for (let pair = 2; pair <= 3; pair++) {
+    console.log('Collecting confirmation pair', pair, 'of 3...');
+    const nextBefore = await run('slow');
+    const nextAfter = await run('optimized');
+    pairs.push({ beforeRunId: nextBefore.id, afterRunId: nextAfter.id });
+  }
+  const report = await request('/experiments/adjudicate', { pairs });
+  console.log('Descriptive repeat-trial verdict:', report.manifest.summary.verdict);
+  console.log('Median measured p95 reduction:', report.manifest.summary.medianP95ReductionPercent, '%');
+  console.log('Source-run SHA-256 checksum:', report.integrity.digest);
+  mkdirSync('reports', { recursive: true });
+  const output = 'reports/loadpilot-evidence-' + report.integrity.digest.slice(0, 12) + '.json';
+  writeFileSync(output, JSON.stringify(report, null, 2) + '\n', { flag: 'wx' });
+  console.log('Evidence JSON saved:', output);
+  console.log('This checksum is not a digital signature. Three demo pairs do not prove statistical significance.');
 }

@@ -68,8 +68,41 @@ export type Finding = {
   cached: boolean;
 };
 
+export type TrialPair = { beforeRunId: string; afterRunId: string };
+
+export type TrialReport = {
+  manifest: {
+    schemaVersion: 'loadpilot.trial-evidence.v1';
+    observations: Array<{
+      pairNumber: number;
+      beforeP95Ms: number;
+      afterP95Ms: number;
+      reductionPercent: number | null;
+      beforeRequests: number;
+      afterRequests: number;
+      meetsDemoThreshold: boolean;
+    }>;
+    summary: {
+      verdict: 'insufficient_repeats' | 'consistent_demo_gap' | 'mixed_observations' | 'no_pairs_meet_threshold';
+      pairCount: number;
+      improvedPairCount: number;
+      medianP95ReductionPercent: number | null;
+      minimumP95ReductionPercent: number | null;
+      maximumP95ReductionPercent: number | null;
+      limitations: string[];
+    };
+    sourceRuns: ExperimentRun[];
+  };
+  integrity: {
+    algorithm: 'sha256';
+    digest: string;
+    canonicalization: string;
+    assurance: string;
+  };
+};
+
 export type DashboardAction =
-  | 'health' | 'status' | 'plan' | 'run' | 'history' | 'compare' | 'diagnose' | 'cancel';
+  | 'health' | 'status' | 'plan' | 'run' | 'history' | 'compare' | 'diagnose' | 'cancel' | 'adjudicate';
 
 export const defaultPlan: TestPlan = {
   scenario: 'baseline',
