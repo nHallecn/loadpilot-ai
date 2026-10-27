@@ -83,7 +83,7 @@ export type TrialReport = {
       meetsDemoThreshold: boolean;
     }>;
     summary: {
-      verdict: 'insufficient_repeats' | 'consistent_demo_gap' | 'mixed_observations' | 'no_repeatable_gap';
+      verdict: 'insufficient_repeats' | 'consistent_demo_gap' | 'mixed_observations' | 'no_pairs_meet_threshold';
       pairCount: number;
       improvedPairCount: number;
       medianP95ReductionPercent: number | null;
