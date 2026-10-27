@@ -13,10 +13,10 @@ Meta Global AI Developer Hackathon, October 26–November 4, 2026.
 | Next.js landing page | Scaffold completed | Source |
 | Meta Model API planner | Implemented on feat/meta-model-api | AI module, strict schema and mocked adapter tests |
 | Protected AI plan endpoint | Implemented on feat/meta-model-api | /ai/status and /ai/plan with bearer gate |
-| Safe bounded load runner | Not started | TBD |
-| Metrics persistence | Not started | TBD |
-| AI diagnosis and hypothesis engine | Not started | TBD |
-| Baseline/retest comparison | Not started | TBD |
+| Safe bounded in-process runner | Implemented on feat/load-testing-engine | Rate/concurrency/duration limits, sample cap and cancellation tests |
+| Metrics history | In-memory only, max 12 run records | Experiment service + test; durable persistence not implemented |
+| AI diagnosis of measured evidence | Not started | TBD |
+| Before/after measured comparison | Implemented on feat/load-testing-engine | Experiment comparison endpoint and test |
 | Three-minute demonstration | Not started | TBD |
 
 ## Pre-existing work
