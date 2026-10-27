@@ -4,9 +4,10 @@ import { useCallback, useState, type ReactNode } from 'react';
 import {
   compactId, defaultPlan, formatNumber,
   type Comparison, type DashboardAction, type ExperimentRun, type Finding, type TestPlan,
+  type TrialPair, type TrialReport,
 } from '../lib/contracts';
 
-type Busy = 'connecting' | 'planning' | 'running-slow' | 'running-optimized' | 'comparing' | 'diagnosing' | null;
+type Busy = 'connecting' | 'planning' | 'running-slow' | 'running-optimized' | 'comparing' | 'diagnosing' | 'confirming' | null;
 
 async function gateway<T>(
   secret: string,
@@ -102,9 +103,13 @@ export default function HomePage() {
   const [comparison, setComparison] = useState<Comparison | null>(null);
   const [diagnosis, setDiagnosis] = useState<Finding | null>(null);
   const [history, setHistory] = useState<ExperimentRun[]>([]);
+  const [trialPairs, setTrialPairs] = useState<TrialPair[]>([]);
+  const [trialReport, setTrialReport] = useState<TrialReport | null>(null);
+  const [confirmationProgress, setConfirmationProgress] = useState(0);
 
   const clearResults = () => {
     setBefore(null); setAfter(null); setComparison(null); setDiagnosis(null);
+    setTrialPairs([]); setTrialReport(null); setConfirmationProgress(0);
   };
 
   const refreshHistory = useCallback(async (key: string) => {
@@ -176,6 +181,7 @@ export default function HomePage() {
         beforeRunId: first.id, afterRunId: second.id,
       });
       setComparison(result);
+      setTrialPairs([{ beforeRunId: first.id, afterRunId: second.id }]);
       setNotice('Two measurements completed. You can now request an evidence-based AI explanation.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Experiment did not complete');
@@ -210,6 +216,53 @@ export default function HomePage() {
     } finally {
       setBusy(null);
     }
+  }
+
+  async function confirmTrials() {
+    if (!comparison || trialPairs.length === 0 || trialPairs.length >= 3) return;
+    setError(''); setTrialReport(null); setBusy('confirming');
+    const collected = trialPairs.slice();
+    try {
+      while (collected.length < 3) {
+        setConfirmationProgress(collected.length);
+        setNotice('Collecting confirmation pair ' + (collected.length + 1) + ' of 3…');
+        const slow = await gateway<ExperimentRun>(accessKey, 'run', {
+          targetId: 'demo-api', variant: 'slow', plan,
+        });
+        if (slow.status !== 'completed') throw new Error('Confirmation slow run cancelled');
+        const optimized = await gateway<ExperimentRun>(accessKey, 'run', {
+          targetId: 'demo-api', variant: 'optimized', plan,
+        });
+        if (optimized.status !== 'completed') throw new Error('Confirmation optimized run cancelled');
+        collected.push({ beforeRunId: slow.id, afterRunId: optimized.id });
+        setTrialPairs(collected.slice());
+        setConfirmationProgress(collected.length);
+      }
+      const report = await gateway<TrialReport>(accessKey, 'adjudicate', { pairs: collected });
+      setTrialReport(report);
+      setNotice('Repeat trials adjudicated. The report is ready to export as JSON with a SHA-256 checksum.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Repeated trials failed');
+    } finally {
+      setBusy(null);
+      try { await refreshHistory(accessKey); } catch { /* previous results remain visible */ }
+    }
+  }
+
+  function exportEvidence() {
+    if (!trialReport) return;
+    const file = new Blob([JSON.stringify(trialReport, null, 2) + '\n'], {
+      type: 'application/json',
+    });
+    const href = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = 'loadpilot-evidence-' + trialReport.integrity.digest.slice(0, 12) + '.json';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    // Revoke later to allow the browser download to begin.
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
   }
 
   const running = busy === 'running-slow' || busy === 'running-optimized' || busy === 'comparing';
@@ -317,6 +370,61 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="diagnosis-empty"><div className="diagnosis-orbit"><SymbolIcon kind="spark"/></div><div><strong>Meet your AI performance investigator</strong><p>{comparison?'Measured evidence is ready. Request a diagnosis to generate a testable, cited hypothesis.':'Complete a comparison first. The agent never analyzes invented or unmeasured data.'}</p></div></div>
+            )}
+          </section>
+
+          <section className="panel repeats-panel" id="repeatability">
+            <div className="history-top">
+              <div>
+                <div className="overline"><SymbolIcon kind="shield"/> REPRODUCIBILITY CHECK</div>
+                <h3>Does the improvement repeat?</h3>
+                <p>Confirm the first comparison with two more matched pairs. No AI calls or credits are used.</p>
+              </div>
+              <button type="button" className="button outline-button"
+                disabled={!connected || !comparison || trialPairs.length >= 3 || Boolean(busy)}
+                onClick={() => void confirmTrials()}>
+                {busy==='confirming' ? <span className="spinner"/> : <SymbolIcon kind="refresh"/>}
+                {busy==='confirming' ? 'Running confirmation trials…' :
+                  trialPairs.length >= 3 ? 'Three pairs collected' : 'Run confirmation trials'}
+              </button>
+            </div>
+            <div className="repeat-progress">
+              {[1,2,3].map((pairNo) => (
+                <div className={'repeat-step ' + (trialPairs.length >= pairNo ? 'repeat-done' : '')} key={pairNo}>
+                  <span className="repeat-number">{trialPairs.length >= pairNo ? '✓' : pairNo}</span>
+                  <div><strong>Pair {pairNo}</strong><small>{trialPairs.length >= pairNo ? 'Complete' :
+                    busy==='confirming' && confirmationProgress + 1 === pairNo ? 'Running…' : 'Awaiting trial'}</small></div>
+                </div>
+              ))}
+            </div>
+            {trialReport ? (
+              <div className="report-body">
+                <div className="repeat-summary">
+                  <div><span className="overline">DETERMINISTIC ASSESSMENT</span>
+                    <h4>{trialReport.manifest.summary.verdict.replaceAll('_',' ')}</h4>
+                    <p>{trialReport.manifest.summary.improvedPairCount} of {trialReport.manifest.summary.pairCount} pairs meet the demonstration threshold (≥10 ms and ≥20% p95 reduction without higher error rate).</p>
+                  </div>
+                  <div className="repeat-median"><small>MEDIAN P95 REDUCTION</small><strong>{trialReport.manifest.summary.medianP95ReductionPercent == null ? '—' : formatNumber(trialReport.manifest.summary.medianP95ReductionPercent) + '%'}</strong></div>
+                </div>
+                <div className="history-table-wrapper">
+                  <table className="history-table">
+                    <thead><tr><th>PAIR</th><th>SLOW P95</th><th>OPTIMIZED P95</th><th>REDUCTION</th><th>THRESHOLD</th></tr></thead>
+                    <tbody>{trialReport.manifest.observations.map((trial) => (
+                      <tr key={trial.pairNumber}><td>#{trial.pairNumber}</td><td>{formatNumber(trial.beforeP95Ms)} ms</td>
+                        <td>{formatNumber(trial.afterP95Ms)} ms</td>
+                        <td>{trial.reductionPercent == null ? '—' : formatNumber(trial.reductionPercent) + '%'}</td>
+                        <td>{trial.meetsDemoThreshold ? 'Meets' : 'Not met'}</td></tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+                <div className="repeat-export">
+                  <div><span className="field-label">EVIDENCE SHA-256 CHECKSUM</span><code>{trialReport.integrity.digest}</code></div>
+                  <button type="button" className="button primary" onClick={exportEvidence}><SymbolIcon kind="arrow"/> Export evidence JSON</button>
+                </div>
+                <p className="muted-note">{trialReport.manifest.summary.limitations.join(' ')}</p>
+              </div>
+            ) : (
+              <p className="muted-note">Requires three distinct slow/optimized pairs with the same parameters. Each pair runs two bounded experiments. No statistical significance or root cause is claimed. The exported checksum is not a digital signature.</p>
             )}
           </section>
 
