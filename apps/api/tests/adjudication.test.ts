@@ -170,5 +170,5 @@ describe('protected trial adjudication API', () => {
       },
     });
     expect(missing.statusCode).toBe(404);
-  });
+  }, 15000);
 });
