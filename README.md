@@ -3,7 +3,7 @@
 **Autonomous Software Performance Investigator**  
 Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
-> Status: **Meta Muse Spark test-plan proposals and the in-process bounded experimental runner are implemented.** The sample service supports measured slow/optimized comparisons. AI analysis of run evidence, persistent storage, and the interactive testing dashboard are **not yet implemented**. All new project code is authored during the October 26–November 4, 2026 hackathon.
+> Status: **Meta Muse Spark test-plan proposals and the in-process bounded experimental runner are implemented.** The sample service supports measured slow/optimized comparisons. A schema-validated, evidence-citing **AI diagnosis endpoint** is implemented on a feature branch. Persistent storage and the interactive testing dashboard are **not yet implemented**. All new project code is authored during the October 26–November 4, 2026 hackathon.
 
 ## The problem
 
@@ -32,6 +32,7 @@ docs/
   ARCHITECTURE.md  Planned components and trust boundaries
   META_MODEL_API.md Server-side Meta planner setup and security constraints
   EXPERIMENTS.md    Local benchmark and comparison walkthrough
+  DIAGNOSTICS.md    Evidence-citing Meta AI diagnosis and independent verification
 HACKATHON_CONTRIBUTIONS.md  Evidence log and third-party disclosure
 ```
 
@@ -51,12 +52,13 @@ pnpm dev
 - Run local experiment: POST http://localhost:4000/experiments/run (private bearer token required)
 - Retrieve history: GET http://localhost:4000/experiments
 - Compare two runs: POST http://localhost:4000/experiments/compare
+- Diagnose compatible runs: POST http://localhost:4000/ai/diagnose (private bearer token required)
 - Run tests: `pnpm test`
 - Typecheck: `pnpm typecheck`
 
 To activate Meta Model API locally, **export** `MODEL_API_KEY` and a strong random `LOADPILOT_DEMO_TOKEN` in the API server's environment. The starter does not auto-load `.env`; copying `.env.example` alone is insufficient. See [Meta Model API setup](docs/META_MODEL_API.md) for a tested-request example. Never commit API keys, expose them through `NEXT_PUBLIC_*`, or publish the Fastify demo API without stronger authentication and persistent rate limits.
 
-The model issues **proposals only**; a separate deterministic runner executes only the bundled in-process demo API, and never loads user-supplied URLs. Run `node --env-file=.env scripts/demo-experiments.mjs` from `apps/api` to compare slow and optimized variants; add `--with-ai` to pay for one live Meta-generated plan. See [Experiment runner](docs/EXPERIMENTS.md). The live Meta API connection was manually validated during development; CI uses mocked Meta responses. Avoid publishing this demo backend without production-grade authentication and quotas.
+The model issues **proposals only**; a separate deterministic runner executes only the bundled in-process demo API, and never loads user-supplied URLs. Run `node --env-file=.env scripts/demo-experiments.mjs` from `apps/api` to compare slow and optimized variants; add `--with-ai` to pay for one live Meta-generated plan, and/or `--diagnose` to pay for an evidence-checked Meta finding. See [Experiment runner](docs/EXPERIMENTS.md) and [AI diagnosis](docs/DIAGNOSTICS.md). The live Meta API connection was manually validated during development; CI uses mocked Meta responses. Avoid publishing this demo backend without production-grade authentication and quotas.
 
 ## Hackathon integrity
 
