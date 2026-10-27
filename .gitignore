@@ -9,3 +9,6 @@ coverage/
 .DS_Store
 .pnpm-store/
 *.log
+
+# Locally exported benchmark evidence (user-controlled; not public source)
+apps/api/reports/
