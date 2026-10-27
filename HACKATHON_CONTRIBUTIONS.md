@@ -10,14 +10,15 @@ Meta Global AI Developer Hackathon, October 26–November 4, 2026.
 | --- | --- | --- |
 | Repository and documentation | Scaffold completed | Initial October 2026 commits |
 | Fastify health API | Scaffold completed | Source and health test |
-| Next.js landing page | Scaffold completed | Source |
+| Next.js interactive dashboard | Implemented on feat/interactive-dashboard | Client UI, proxy, responsive visuals, local setup docs and CI |
 | Meta Model API planner | Implemented on feat/meta-model-api | AI module, strict schema and mocked adapter tests |
 | Protected AI plan endpoint | Implemented on feat/meta-model-api | /ai/status and /ai/plan with bearer gate |
 | Safe bounded in-process runner | Implemented on feat/load-testing-engine | Rate/concurrency/duration limits, sample cap and cancellation tests |
 | Metrics history | In-memory only, max 12 run records | Experiment service + test; durable persistence not implemented |
-| AI diagnosis of measured evidence | Implemented on feat/evidence-based-diagnostics (PR pending review) | Strict evidence manifest, JSON schema, independent numeric oracle, protected endpoint and tests |
+| AI diagnosis of measured evidence | Implemented on feat/evidence-based-diagnostics (merged) | Strict evidence manifest, JSON schema, independent numeric oracle, protected endpoint and tests |
 | Before/after measured comparison | Implemented on feat/load-testing-engine | Experiment comparison endpoint and test |
-| Three-minute demonstration | Not started | TBD |
+| Three-minute demonstration | Not recorded | Demo script and live verification still needed |
+| Public production deployment | Not started | Requires identity, rate limits, durable jobs and secure hosted backend |
 
 ## Pre-existing work
 
