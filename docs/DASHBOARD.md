@@ -61,14 +61,16 @@ Open http://localhost:3000 (or the **private** Codespaces 3000 forwarded-port pr
 3. Click **Run both experiments** (slow and optimized). The UI reports progress, and measured runs are stored server-side.
 4. Inspect measured p95 and p50/p99 chart and throughput changes. The observed result is **not causal proof**.
 5. Click **Investigate with AI** (one paid diagnosis unless cached). The agent cites verified numeric measurements and offers a non-executed follow-up.
-6. Review recent runs in the history table. This history resets when Fastify restarts.
+6. Click **Run confirmation trials** to explicitly run two additional slow/optimized pairs under the same plan (no AI credits).
+7. Inspect the deterministic three-pair verdict and export the SHA-256-checksummed JSON evidence report. This is a descriptive check, not inferential statistics or causal proof.
+8. Review recent runs in the history table. This history resets when Fastify restarts.
 
 ## Security and architecture
 
 Browser → same-origin Next.js `POST /api/gateway` (with a private dashboard access key) → **server-side only** Fastify on `127.0.0.1:4000` (private backend bearer token) → bounded in-process demo API / server-side Meta API.
 
 - The web UI never receives `MODEL_API_KEY` or the Fastify bearer token.
-- The gateway accepts only eight fixed operations (`health`, `status`, `plan`, `run`, `history`, `compare`, `diagnose`, `cancel`); arbitrary upstream URLs and paths are impossible.
+- The gateway accepts only nine fixed operations (`health`, `status`, `plan`, `run`, `history`, `compare`, `diagnose`, `cancel`, `adjudicate`); arbitrary upstream URLs and paths are impossible.
 - The upstream hostname is restricted to `localhost` or `127.0.0.1` via an environment variable. No remote backend is supported yet.
 - No persistent credentials in browser localStorage or cookies. Access key is cleared on lock/reload.
 - Web routes require a strong, separate dashboard access token and use timing-safe comparisons.
@@ -83,4 +85,4 @@ Browser → same-origin Next.js `POST /api/gateway` (with a private dashboard ac
 
 ## Next milestone
 
-Improve demo reliability and repeat-trial statistical adjudication, save immutable evidence artifacts, and record the final three-minute submission video.
+Record the final three-minute submission video. The repeat-trial assessment is descriptive (not statistical significance); the checksum verifies an exported snapshot but is not a signature or durable backend storage. See [Repeatability](REPEATABILITY.md).
