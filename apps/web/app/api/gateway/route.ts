@@ -11,6 +11,7 @@ const operations = {
   run: { method: 'POST', path: '/experiments/run' },
   history: { method: 'GET', path: '/experiments' },
   compare: { method: 'POST', path: '/experiments/compare' },
+  adjudicate: { method: 'POST', path: '/experiments/adjudicate' },
   diagnose: { method: 'POST', path: '/ai/diagnose' },
   cancel: { method: 'DELETE', path: '/experiments/active' },
 } as const;
