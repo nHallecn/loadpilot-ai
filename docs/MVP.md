@@ -16,11 +16,10 @@ Demonstrate a closed-loop, AI-assisted performance investigation against an auth
 
 ## Safety acceptance criteria
 
-- Only explicitly allowlisted local/sample targets are supported by the MVP.
-- SSRF-resistant address validation; reject external IPs, localhost aliases not on the allowlist, metadata IPs, and redirects outside the allowlist.
+- Milestone 2 accepts no target URLs or hostnames: only a literal demo-api ID which routes to an isolated, in-process Fastify.inject target. Consequently it has no SSRF network surface. Any future network runner must enforce DNS/IP/redirect authorization.
 - Limits on concurrency, duration, requests and rate are enforced outside the model.
 - Model output is untrusted and schema-validated before any tool invocation.
-- Long-running jobs support cancellation and safe termination.
+- Active in-process runs can be cancelled using DELETE /experiments/active (no new requests start; current in-flight handlers finish).
 - Do not send credentials or sensitive user logs to a model.
 
 ## Demo acceptance criteria
