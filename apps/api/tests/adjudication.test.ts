@@ -119,7 +119,7 @@ describe('deterministic repeat-trial adjudication', () => {
 });
 
 describe('protected trial adjudication API', () => {
-  const experiments = new ExperimentService({ durationOverrideMs: 350 });
+  const experiments = new ExperimentService({ durationOverrideMs: 1450 });
   const app = buildApp({ demoToken: 'repeat-demo-test-secret', experiments });
   afterAll(async () => app.close());
 
