@@ -1,6 +1,6 @@
-# Meta Model API Integration — Phase 1
+# Meta Model API Integration — Planning and Diagnosis
 
-This module implements **test-plan proposals only**. It does not execute HTTP load, diagnose bottlenecks, or verify fixes yet.
+The planning module implements **test-plan proposals**. The diagnosis module analyzes **numeric evidence from completed local experiments** and proposes follow-up experiments without executing them. A separate bounded, in-process runner performs demo experiments; neither model can trigger arbitrary network load.
 
 ## Official API
 
@@ -36,7 +36,7 @@ Request a bounded, **non-executable** proposal:
 
 ## Safety
 
-- No tests are executed by this milestone; AI responses remain proposals.
+- Models do not execute tests; the separate runner accepts only explicit token-protected calls for a bundled in-process target.
 - No arbitrary URLs/hosts allowed in request body; the target ID is the literal "demo-api".
 - Hard caps: concurrency 1–20, duration 5–30 seconds, rate 1–50 req/s.
 - Both static strict JSON Schema and runtime Zod validation restrict model output.
@@ -47,8 +47,8 @@ Request a bounded, **non-executable** proposal:
 - This is **hackathon demo protection**, not a complete production authentication/rate-limiting system.
 - Do not expose the Fastify service publicly without network restrictions and persistent rate limits.
 - Store MODEL_API_KEY and LOADPILOT_DEMO_TOKEN in a secret manager for deployment.
-- No actual paid request can be tested without credentials; the tests use a mocked HTTP transport.
+- Planning was manually verified with a live model request during the hackathon. CI uses mocked HTTP; live diagnosis still needs local verification.
 
-## Next milestone
+## Diagnosis milestone
 
-Build a bounded, allowlisted sample API runner with deterministic enforcement independent of model output, then connect metrics to AI diagnosis.
+Read [AI diagnosis](DIAGNOSTICS.md) for compatible run criteria, numerical evidence references, validation, and the opt-in paid `--diagnose` demo. Next: build a dashboard and repeat-trial evaluation.
