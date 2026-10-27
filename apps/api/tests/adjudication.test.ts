@@ -82,7 +82,7 @@ describe('deterministic repeat-trial adjudication', () => {
     const noImprovement = adjudicateTrials(none.lookup, none.pairs);
     expect(noImprovement.ok).toBe(true);
     if (!noImprovement.ok) throw new Error();
-    expect(noImprovement.report.manifest.summary.verdict).toBe('no_repeatable_gap');
+    expect(noImprovement.report.manifest.summary.verdict).toBe('no_pairs_meet_threshold');
   });
 
   it('rejects duplicate, missing, cancelled, mismatched and undersampled records', () => {
