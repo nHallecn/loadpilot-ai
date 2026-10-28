@@ -173,7 +173,7 @@ export function investigateControlledFactors(
   const a = serialization.signal === 'observed_at_demo_threshold';
   const b = processing.signal === 'observed_at_demo_threshold';
   const errorRegression = [serialization, processing].some(x => x.signal === 'error_regression');
-  const classification = errorRegression ? 'inconclusive_error_regression' :
+  const classification: ControlledReport['conclusion']['classification'] = errorRegression ? 'inconclusive_error_regression' :
     a && b ? 'both_signals_observed' :
     a ? 'serialization_signal_only' :
     b ? 'processing_delay_signal_only' : 'neither_signal_observed';
