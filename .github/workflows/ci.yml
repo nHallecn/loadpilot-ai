@@ -20,6 +20,10 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+      - name: Check demo script syntax
+        run: |
+          node --check apps/api/scripts/demo-preflight.mjs
+          node --check apps/api/scripts/demo-experiments.mjs
       - name: Unit tests
         run: pnpm test
       - name: Typecheck
