@@ -47,8 +47,8 @@ Request a bounded, **non-executable** proposal:
 - This is **hackathon demo protection**, not a complete production authentication/rate-limiting system.
 - Do not expose the Fastify service publicly without network restrictions and persistent rate limits.
 - Store MODEL_API_KEY and LOADPILOT_DEMO_TOKEN in a secret manager for deployment.
-- Planning was manually verified with a live model request during the hackathon. CI uses mocked HTTP; live diagnosis still needs local verification.
+- Planning was manually verified with a live model request during the hackathon. CI uses mocked HTTP; live diagnosis was manually verified using Muse Spark 1.3 and measured run evidence; CI uses mocked responses and does not spend credits.
 
 ## Diagnosis milestone
 
-Read [AI diagnosis](DIAGNOSTICS.md) for compatible run criteria, numerical evidence references, validation, and the opt-in paid `--diagnose` demo. Next: build a dashboard and repeat-trial evaluation.
+Read [AI diagnosis](DIAGNOSTICS.md) for compatible run criteria, numerical evidence references, validation, and the opt-in paid `--diagnose` demo. The dashboard and repeat-trial assessment are implemented for the in-process demo. Next: record and submit the official hackathon demonstration.
