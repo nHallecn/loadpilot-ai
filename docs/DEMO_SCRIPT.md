@@ -63,3 +63,7 @@ Do **not** fake a successful model result. Show the previously captured **real**
 ## Recording tooling
 
 OBS Studio, the operating system's screen recorder, or a straightforward screen-capture tool is sufficient. Use your own voice or legible captions. Background music is optional and should be licensed or omitted.
+
+## Optional higher-impact Priority 2 recording variant
+
+If the working dashboard now supports it and the live test succeeds: show **Use low-load baseline → Isolate bottleneck factors → Ask Muse to choose a hypothesis → Approve & run two local tests → Ask Muse to reassess**. This more directly demonstrates Meta model reasoning over competing hypotheses. Make the second paid call explicit in the narration. You can trim only real waiting time, labelled honestly; do not claim a particular verdict unless it was actually observed. The full sequence may take more than three minutes if shown in real time; plan edited cuts carefully. See [AI hypotheses](AI_HYPOTHESES.md).
