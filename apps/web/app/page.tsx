@@ -4,10 +4,10 @@ import { useCallback, useState, type ReactNode } from 'react';
 import {
   compactId, defaultPlan, formatNumber,
   type Comparison, type DashboardAction, type ExperimentRun, type Finding, type TestPlan,
-  type TrialPair, type TrialReport, type ControlledReport,
+  type TrialPair, type TrialReport, type ControlledReport, type HypothesisSession, type HypothesisReview,
 } from '../lib/contracts';
 
-type Busy = 'connecting' | 'planning' | 'running-slow' | 'running-optimized' | 'comparing' | 'diagnosing' | 'confirming' | 'isolating' | null;
+type Busy = 'connecting' | 'planning' | 'running-slow' | 'running-optimized' | 'comparing' | 'diagnosing' | 'confirming' | 'isolating' | 'hypothesizing' | 'retesting' | 'reassessing' | null;
 
 async function gateway<T>(
   secret: string,
@@ -108,11 +108,15 @@ export default function HomePage() {
   const [confirmationProgress, setConfirmationProgress] = useState(0);
   const [controlledReport, setControlledReport] = useState<ControlledReport | null>(null);
   const [isolationStep, setIsolationStep] = useState(0);
+  const [hypothesisSession, setHypothesisSession] = useState<HypothesisSession | null>(null);
+  const [followUpRuns, setFollowUpRuns] = useState<ExperimentRun[]>([]);
+  const [hypothesisReview, setHypothesisReview] = useState<HypothesisReview | null>(null);
 
   const clearResults = () => {
     setBefore(null); setAfter(null); setComparison(null); setDiagnosis(null);
     setTrialPairs([]); setTrialReport(null); setConfirmationProgress(0);
     setControlledReport(null); setIsolationStep(0);
+    setHypothesisSession(null); setFollowUpRuns([]); setHypothesisReview(null);
   };
 
   const refreshHistory = useCallback(async (key: string) => {
@@ -254,7 +258,8 @@ export default function HomePage() {
 
 
   async function runControlledInvestigation() {
-    setError(''); setControlledReport(null); setIsolationStep(0); setBusy('isolating');
+    setError(''); setControlledReport(null); setIsolationStep(0);
+    setHypothesisSession(null); setFollowUpRuns([]); setHypothesisReview(null); setBusy('isolating');
     try {
       const orderedVariants = ['slow', 'parallel_slow', 'optimized'] as const;
       const runs: ExperimentRun[] = [];
@@ -282,6 +287,74 @@ export default function HomePage() {
       setBusy(null);
       try { await refreshHistory(accessKey); } catch { /* recent measurements remain visible */ }
     }
+  }
+
+
+  function chooseLowLoad() {
+    setPlan(p => ({
+      ...p, concurrency: 1, requestsPerSecond: 5, durationSeconds: 5,
+      hypothesis: 'Test whether serialization is visible at low load before increasing traffic.',
+    }));
+    setPlanSource('manual');
+    clearResults();
+    setNotice('Low-load plan selected (1 worker, 5 req/s, 5 seconds). Click Isolate bottleneck factors to collect the first evidence.');
+  }
+
+  async function askHypothesis() {
+    if (!controlledReport) return;
+    setBusy('hypothesizing'); setError('');
+    setHypothesisSession(null); setFollowUpRuns([]); setHypothesisReview(null);
+    try {
+      const [serial, sameWork, fast] = controlledReport.sourceRuns;
+      const suggestion = await gateway<HypothesisSession>(accessKey, 'hypothesize', {
+        serializedRunId: serial.id,
+        parallelSameWorkRunId: sameWork.id,
+        parallelFastWorkRunId: fast.id,
+      });
+      setHypothesisSession(suggestion);
+      setNotice('Muse Spark proposed a measurable follow-up. Review the authorized plan and launch it separately.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Muse hypothesis proposal failed');
+    } finally { setBusy(null); }
+  }
+
+  async function runHypothesisFollowUp() {
+    if (!hypothesisSession || !controlledReport) return;
+    setBusy('retesting'); setError(''); setFollowUpRuns([]); setHypothesisReview(null);
+    const runs: ExperimentRun[] = [];
+    try {
+      for (const variant of hypothesisSession.followUp.variants) {
+        setNotice('Running approved retest: ' + variant.replaceAll('_', ' ') + '…');
+        const run = await gateway<ExperimentRun>(accessKey, 'run', {
+          targetId: 'demo-api', variant, plan: hypothesisSession.followUp.plan,
+        });
+        if (run.status !== 'completed') throw new Error('Retest was cancelled. No hypothesis assessment can be made.');
+        runs.push(run);
+        setFollowUpRuns(runs.slice());
+      }
+      setNotice('Retest measured. Use the separate AI review action to evaluate the new evidence.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Retest failed');
+    } finally {
+      setBusy(null);
+      try { await refreshHistory(accessKey); } catch { /* run metrics remain visible */ }
+    }
+  }
+
+  async function reviewHypothesis() {
+    if (!hypothesisSession || followUpRuns.length !== 2) return;
+    setBusy('reassessing'); setError(''); setHypothesisReview(null);
+    try {
+      const review = await gateway<HypothesisReview>(accessKey, 'reassess', {
+        investigationId: hypothesisSession.investigationId,
+        followUpBeforeRunId: followUpRuns[0].id,
+        followUpAfterRunId: followUpRuns[1].id,
+      });
+      setHypothesisReview(review);
+      setNotice('Muse evaluated the new evidence; its verdict passed the numeric verification gate.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'AI evidence reassessment failed');
+    } finally { setBusy(null); }
   }
 
   function exportControlledEvidence() {
@@ -430,6 +503,10 @@ export default function HomePage() {
                 <h3>What actually changes the latency?</h3>
                 <p>Test competing explanations by changing one configured synthetic factor at a time, with the same load settings.</p>
               </div>
+              <button type="button" className="button refresh-button"
+                disabled={!connected || Boolean(busy)} onClick={chooseLowLoad}>
+                Use low-load baseline
+              </button>
               <button type="button" className="button outline-button"
                 disabled={!connected || Boolean(busy)}
                 onClick={() => void runControlledInvestigation()}>
@@ -470,6 +547,66 @@ export default function HomePage() {
                       <span className={'contrast-status ' + (contrast.signal === 'observed_at_demo_threshold' ? 'signal-positive' : '')}>{contrast.signal.replaceAll('_',' ')}</span>
                     </article>
                   ))}
+                </div>
+                <div className="hypothesis-panel">
+                  <div className="hypothesis-head">
+                    <div>
+                      <span className="overline"><SymbolIcon kind="spark"/> MUSE SPARK · ADAPTIVE FOLLOW-UP</span>
+                      <h4>Let the AI challenge the first finding</h4>
+                      <p className="muted-note">Muse reads the two measured contrasts, selects a hypothesis and proposes an allowable retest. The model never starts traffic. Each model request uses API credits.</p>
+                    </div>
+                    <button type="button" className="button ai-button hypothesis-action"
+                      disabled={!connected || !aiConfigured || Boolean(busy)} onClick={() => void askHypothesis()}>
+                      {busy === 'hypothesizing' ? <span className="spinner"/> : <SymbolIcon kind="spark"/>}
+                      {busy === 'hypothesizing' ? 'Muse is reviewing…' : 'Ask Muse to choose a hypothesis'}
+                    </button>
+                  </div>
+                  {hypothesisSession && (
+                    <div className="hypothesis-details">
+                      <span className="finding-tag">AI SELECTED · {hypothesisSession.hypothesis.hypothesis.replaceAll('_',' ')}</span>
+                      <h4>Initial evidence: {hypothesisSession.hypothesis.initialSignal.replaceAll('_',' ')}</h4>
+                      <p>{hypothesisSession.hypothesis.rationale}</p>
+                      <span className="field-label">PROPOSED EXPERIMENT · USER APPROVAL REQUIRED</span>
+                      <p><strong>{hypothesisSession.hypothesis.followUpAction.replaceAll('_',' ')}</strong> — {hypothesisSession.hypothesis.whyThisTest}</p>
+                      <p>Approved limits: {hypothesisSession.followUp.plan.concurrency} workers · {hypothesisSession.followUp.plan.requestsPerSecond} req/s · {hypothesisSession.followUp.plan.durationSeconds} seconds per run · only local demo-api.</p>
+                      <p>Comparison: {hypothesisSession.followUp.variants.map(v=>v.replaceAll('_',' ')).join(' → ')}</p>
+                      <button type="button" className="button primary" disabled={Boolean(busy) || followUpRuns.length === 2}
+                        onClick={() => void runHypothesisFollowUp()}>
+                        {busy === 'retesting' ? <span className="spinner"/> : <SymbolIcon kind="play"/>}
+                        {busy === 'retesting' ? 'Running approved retest…' : 'Approve & run these 2 local tests'}
+                      </button>
+                      {followUpRuns.length > 0 && (
+                        <div className="retest-measurements">
+                          {followUpRuns.map(run=>(
+                            <div key={run.id}><small>{run.variant.replaceAll('_', ' ').toUpperCase()}</small>
+                              <strong>{formatNumber(run.metrics.latencyMs.p95)} ms</strong>
+                              <span>{run.metrics.requestCount} measured requests</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {followUpRuns.length === 2 && (
+                        <button type="button" className="button outline-button" disabled={Boolean(busy) || !aiConfigured}
+                          onClick={() => void reviewHypothesis()}>
+                          {busy==='reassessing'?<span className="spinner"/>:<SymbolIcon kind="spark"/>}
+                          {busy==='reassessing'?'Checking new measurements…':'Ask Muse to reassess (uses credits)'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {hypothesisReview && (
+                    <div className="hypothesis-review">
+                      <span className="overline">EVIDENCE-GATED RETEST VERDICT</span>
+                      <h4>{hypothesisReview.assessment.verdict.replaceAll('_',' ')}</h4>
+                      <p>{hypothesisReview.assessment.explanation}</p>
+                      <div className="evidence-list">{hypothesisReview.citedEvidence.map(item=>(
+                        <div className="evidence-row" key={item.id}><span>{item.id.replaceAll('_',' ').replaceAll('.',' · ')}</span>
+                          <strong>{formatNumber(item.value)}</strong></div>
+                      ))}</div>
+                      <p><strong>Next analytical step:</strong> {hypothesisReview.assessment.nextStep}</p>
+                      <p className="muted-note">{hypothesisReview.limitations.join(' ')}</p>
+                    </div>
+                  )}
                 </div>
                 <div className="repeat-export">
                   <div><span className="field-label">SOURCE-EVIDENCE SHA-256 CHECKSUM</span><code>{controlledReport.integrity.digest}</code></div>
