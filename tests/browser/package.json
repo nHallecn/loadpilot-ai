@@ -1,0 +1,9 @@
+{
+  "name": "loadpilot-browser-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Browser tests only; installs Playwright separately from pnpm workspace",
+  "dependencies": {
+    "playwright": "1.56.1"
+  }
+}
