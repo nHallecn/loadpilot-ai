@@ -3,7 +3,7 @@ import { testPlanSchema } from '../ai/schemas.js';
 
 export const experimentRequestSchema = z.object({
   targetId: z.literal('demo-api'),
-  variant: z.enum(['slow', 'optimized']),
+  variant: z.enum(['slow', 'parallel_slow', 'optimized']),
   plan: testPlanSchema,
 }).strict();
 
