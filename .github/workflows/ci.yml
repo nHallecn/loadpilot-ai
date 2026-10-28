@@ -32,3 +32,32 @@ jobs:
         run: pnpm typecheck
       - name: Build dashboard
         run: pnpm --filter @loadpilot/web build
+
+
+  browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install app dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Install isolated browser test dependency
+        run: npm install --prefix tests/browser --no-package-lock --no-audit --no-fund
+      - name: Install headless Chromium and system dependencies
+        run: node tests/browser/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Run actual dashboard and bounded API integration in Chromium
+        run: node tests/browser/e2e.mjs
+      - name: Upload browser evidence and logs (no real user secrets)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loadpilot-browser-ci
+          path: tests/browser/artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
