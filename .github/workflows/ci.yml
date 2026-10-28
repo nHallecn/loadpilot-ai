@@ -47,6 +47,8 @@ jobs:
           node-version: 22
       - name: Install app dependencies
         run: pnpm install --no-frozen-lockfile
+      - name: Build production dashboard for browser verification
+        run: pnpm --filter @loadpilot/web build
       - name: Install isolated browser test dependency
         run: npm install --prefix tests/browser --no-package-lock --no-audit --no-fund
       - name: Install headless Chromium and system dependencies
