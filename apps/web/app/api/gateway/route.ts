@@ -13,6 +13,8 @@ const operations = {
   compare: { method: 'POST', path: '/experiments/compare' },
   adjudicate: { method: 'POST', path: '/experiments/adjudicate' },
   controlled: { method: 'POST', path: '/investigations/controlled' },
+  hypothesize: { method: 'POST', path: '/ai/hypotheses' },
+  reassess: { method: 'POST', path: '/ai/reassess' },
   diagnose: { method: 'POST', path: '/ai/diagnose' },
   cancel: { method: 'DELETE', path: '/experiments/active' },
 } as const;
