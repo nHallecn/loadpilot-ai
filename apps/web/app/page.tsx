@@ -4,10 +4,10 @@ import { useCallback, useState, type ReactNode } from 'react';
 import {
   compactId, defaultPlan, formatNumber,
   type Comparison, type DashboardAction, type ExperimentRun, type Finding, type TestPlan,
-  type TrialPair, type TrialReport,
+  type TrialPair, type TrialReport, type ControlledReport,
 } from '../lib/contracts';
 
-type Busy = 'connecting' | 'planning' | 'running-slow' | 'running-optimized' | 'comparing' | 'diagnosing' | 'confirming' | null;
+type Busy = 'connecting' | 'planning' | 'running-slow' | 'running-optimized' | 'comparing' | 'diagnosing' | 'confirming' | 'isolating' | null;
 
 async function gateway<T>(
   secret: string,
@@ -106,10 +106,13 @@ export default function HomePage() {
   const [trialPairs, setTrialPairs] = useState<TrialPair[]>([]);
   const [trialReport, setTrialReport] = useState<TrialReport | null>(null);
   const [confirmationProgress, setConfirmationProgress] = useState(0);
+  const [controlledReport, setControlledReport] = useState<ControlledReport | null>(null);
+  const [isolationStep, setIsolationStep] = useState(0);
 
   const clearResults = () => {
     setBefore(null); setAfter(null); setComparison(null); setDiagnosis(null);
     setTrialPairs([]); setTrialReport(null); setConfirmationProgress(0);
+    setControlledReport(null); setIsolationStep(0);
   };
 
   const refreshHistory = useCallback(async (key: string) => {
@@ -249,6 +252,53 @@ export default function HomePage() {
     }
   }
 
+
+  async function runControlledInvestigation() {
+    setError(''); setControlledReport(null); setIsolationStep(0); setBusy('isolating');
+    try {
+      const orderedVariants = ['slow', 'parallel_slow', 'optimized'] as const;
+      const runs: ExperimentRun[] = [];
+      for (const variant of orderedVariants) {
+        setNotice('Controlled investigation: measuring ' + variant.replaceAll('_',' ') + '…');
+        const result = await gateway<ExperimentRun>(accessKey, 'run', {
+          targetId: 'demo-api', variant, plan,
+        });
+        if (result.status !== 'completed') {
+          throw new Error('Controlled ' + variant + ' experiment was cancelled');
+        }
+        runs.push(result);
+        setIsolationStep(runs.length);
+      }
+      const report = await gateway<ControlledReport>(accessKey, 'controlled', {
+        serializedRunId: runs[0].id,
+        parallelSameWorkRunId: runs[1].id,
+        parallelFastWorkRunId: runs[2].id,
+      });
+      setControlledReport(report);
+      setNotice('Two single-factor comparisons completed. The findings are descriptive synthetic evidence, not root-cause proof.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Controlled investigation failed');
+    } finally {
+      setBusy(null);
+      try { await refreshHistory(accessKey); } catch { /* recent measurements remain visible */ }
+    }
+  }
+
+  function exportControlledEvidence() {
+    if (!controlledReport) return;
+    const content = new Blob([JSON.stringify(controlledReport, null, 2) + '\n'], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(content);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'loadpilot-controlled-' + controlledReport.integrity.digest.slice(0, 12) + '.json';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   function exportEvidence() {
     if (!trialReport) return;
     const file = new Blob([JSON.stringify(trialReport, null, 2) + '\n'], {
@@ -370,6 +420,66 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="diagnosis-empty"><div className="diagnosis-orbit"><SymbolIcon kind="spark"/></div><div><strong>Meet your AI performance investigator</strong><p>{comparison?'Measured evidence is ready. Request a diagnosis to generate a testable, cited hypothesis.':'Complete a comparison first. The agent never analyzes invented or unmeasured data.'}</p></div></div>
+            )}
+          </section>
+
+          <section className="panel controlled-panel" id="controlled">
+            <div className="history-top">
+              <div>
+                <div className="overline"><SymbolIcon kind="cpu"/> CONTROLLED BOTTLENECK INVESTIGATION</div>
+                <h3>What actually changes the latency?</h3>
+                <p>Test competing explanations by changing one configured synthetic factor at a time, with the same load settings.</p>
+              </div>
+              <button type="button" className="button outline-button"
+                disabled={!connected || Boolean(busy)}
+                onClick={() => void runControlledInvestigation()}>
+                {busy === 'isolating' ? <span className="spinner"/> : <SymbolIcon kind="play"/>}
+                {busy === 'isolating' ? 'Running controlled experiments…' : 'Isolate bottleneck factors'}
+              </button>
+            </div>
+            <div className="controlled-steps" role="group" aria-label="Controlled sample variants">
+              {[
+                {name:'Serialized',detail:'80 ms work · serial queue'},
+                {name:'Parallel control',detail:'80 ms work · concurrent'},
+                {name:'Parallel optimized',detail:'8 ms work · concurrent'},
+              ].map((step, index) => (
+                <div className={'controlled-step ' + (isolationStep > index ? 'controlled-step-done' : '')} key={step.name}>
+                  <span>{index+1}</span><strong>{step.name}</strong><small>{step.detail}</small>
+                </div>
+              ))}
+            </div>
+            {controlledReport ? (
+              <div className="controlled-details">
+                <div className="controlled-conclusion">
+                  <span className="overline">DESCRIPTIVE EVIDENCE CLASSIFICATION</span>
+                  <h4>{controlledReport.conclusion.classification.replaceAll('_',' ')}</h4>
+                  <p>{controlledReport.conclusion.interpretation}</p>
+                </div>
+                <div className="controlled-contrasts">
+                  {controlledReport.contrasts.map(contrast => (
+                    <article className="contrast-card" key={contrast.hypothesis}>
+                      <span className="field-label">{contrast.hypothesis === 'serialization_overhead' ? 'HYPOTHESIS A · SERIAL QUEUE' : 'HYPOTHESIS B · PROCESSING DELAY'}</span>
+                      <h4>{contrast.hypothesis === 'serialization_overhead' ? 'Does serialization increase latency?' : 'Does slower work increase latency?'}</h4>
+                      <div className="contrast-numbers">
+                        <div><small>BEFORE P95</small><strong>{formatNumber(contrast.beforeP95Ms)} ms</strong></div>
+                        <SymbolIcon kind="arrow"/>
+                        <div><small>AFTER P95</small><strong>{formatNumber(contrast.afterP95Ms)} ms</strong></div>
+                      </div>
+                      <p>Observed change: <strong>{formatNumber(contrast.reductionPercent)}% lower p95</strong></p>
+                      <p>Held constant: {contrast.heldConstant.join(' · ')}</p>
+                      <span className={'contrast-status ' + (contrast.signal === 'observed_at_demo_threshold' ? 'signal-positive' : '')}>{contrast.signal.replaceAll('_',' ')}</span>
+                    </article>
+                  ))}
+                </div>
+                <div className="repeat-export">
+                  <div><span className="field-label">SOURCE-EVIDENCE SHA-256 CHECKSUM</span><code>{controlledReport.integrity.digest}</code></div>
+                  <button type="button" className="button primary" onClick={exportControlledEvidence}>Export controlled evidence</button>
+                </div>
+                <p className="muted-note">{controlledReport.conclusion.limitations.join(' ')}</p>
+                <p className="muted-note">This report is generated by deterministic evidence checks. Muse Spark has not interpreted the isolated contrasts yet—that is the next milestone.</p>
+              </div>
+            ) : (
+              <p className="muted-note">Three separate local tests, one explicit action, no model credits. Contrasts: serialized 80 ms vs parallel 80 ms (only scheduling changes), then parallel 80 ms vs parallel 8 ms (only simulated work duration changes). A single ordered triplet is not proof of production causality.</p>
             )}
           </section>
 

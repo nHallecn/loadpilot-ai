@@ -28,7 +28,7 @@ export type Metrics = {
 export type ExperimentRun = {
   id: string;
   targetId: 'demo-api';
-  variant: 'slow' | 'optimized';
+  variant: 'slow' | 'parallel_slow' | 'optimized';
   plan: TestPlan;
   recordedAt: string;
   status: 'completed' | 'cancelled';
@@ -101,8 +101,32 @@ export type TrialReport = {
   };
 };
 
+export type ControlledReport = {
+  schemaVersion: 'loadpilot.isolated-factors.v1';
+  assessment: string;
+  sourceRuns: ExperimentRun[];
+  contrasts: Array<{
+    hypothesis: 'serialization_overhead' | 'processing_delay';
+    beforeP95Ms: number;
+    afterP95Ms: number;
+    differenceMs: number;
+    reductionPercent: number;
+    changedFactor: string;
+    heldConstant: string[];
+    beforeRequests: number;
+    afterRequests: number;
+    signal: 'observed_at_demo_threshold' | 'not_observed_at_demo_threshold' | 'error_regression';
+  }>;
+  conclusion: {
+    classification: string;
+    interpretation: string;
+    limitations: string[];
+  };
+  integrity: { digest: string; assurance: string };
+};
+
 export type DashboardAction =
-  | 'health' | 'status' | 'plan' | 'run' | 'history' | 'compare' | 'diagnose' | 'cancel' | 'adjudicate';
+  | 'health' | 'status' | 'plan' | 'run' | 'history' | 'compare' | 'diagnose' | 'cancel' | 'adjudicate' | 'controlled';
 
 export const defaultPlan: TestPlan = {
   scenario: 'baseline',

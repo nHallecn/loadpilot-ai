@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { createMetaDiagnostician, DiagnosticError, type Diagnostician } from './ai/meta-diagnostician.js';
 import { diagnosisRequestSchema, prepareEvidence } from './ai/diagnostic-evidence.js';
 import { adjudicateTrials, trialPairsSchema } from './experiments/adjudication.js';
+import { controlledRequestSchema, investigateControlledFactors } from './experiments/controlled-investigation.js';
 
 type AppOptions = {
   planner?: Planner;
@@ -164,6 +165,28 @@ export function buildApp(options: AppOptions = {}) {
       });
     }
     return reply.code(200).send(result.report);
+  });
+
+
+  // A read-only evidence assessment: it never generates traffic or requests Meta credits.
+  app.post('/investigations/controlled', async (request, reply) => {
+    if (!demoToken) return reply.code(503).send({ error: 'Investigation service not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const parsed = controlledRequestSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Invalid controlled investigation request' });
+    }
+    const report = investigateControlledFactors(experiments, parsed.data);
+    if (!report.ok) {
+      return reply.code(report.reason === 'missing_run' ? 404 : 422).send({
+        error: report.reason === 'missing_run'
+          ? 'One or more run IDs no longer exist'
+          : 'Expected three distinct complete runs: slow, parallel_slow, optimized; identical test settings and at least 10 samples each',
+      });
+    }
+    return reply.code(200).send(report.report);
   });
 
   app.post('/ai/diagnose', async (request, reply) => {

@@ -301,3 +301,34 @@ h3 { font-size: 21px; letter-spacing: -.8px; margin-bottom: 7px; }
   .repeat-summary { align-items: flex-start; flex-direction: column; }
   .repeat-median { text-align: left; }
 }
+
+
+/* Priority 1 — controlled, one-factor investigation */
+.controlled-panel { margin-top: 20px; }
+.controlled-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 20px 0 16px; }
+.controlled-step { border: 1px solid #374052; background: #101826; border-radius: 10px; padding: 14px; display: grid; gap: 5px; }
+.controlled-step span { height: 27px; width: 27px; border-radius: 50%; display: grid; place-items: center; background: #332c52; color: #c9bcff; font-weight: 800; font-size: 12px; }
+.controlled-step strong { font-size: 12px; }
+.controlled-step small { font-size: 10px; color: #8394ae; }
+.controlled-step-done { background: #152a28; border-color: #346054; }
+.controlled-step-done span { color: #b3f7da; background: #245f4b; }
+.controlled-conclusion { background: #16272b; border: 1px solid #396467; border-radius: 12px; padding: 18px; margin: 20px 0; }
+.controlled-conclusion h4 { font-size: 20px; margin: 9px 0; text-transform: capitalize; color: #8ae8d4; }
+.controlled-conclusion p { color: #a9cccb; font-size: 12px; line-height: 1.7; margin: 0; }
+.controlled-contrasts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.contrast-card { background: #0e1827; border-radius: 12px; border: 1px solid #35435a; padding: 18px; }
+.contrast-card h4 { font-size: 17px; line-height: 1.4; margin-bottom: 17px; }
+.contrast-numbers { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.contrast-numbers div { min-width: 0; }
+.contrast-numbers small { font-size: 9px; color: #8196a8; display: block; margin-bottom: 5px; }
+.contrast-numbers strong { font: 700 clamp(13px,1.5vw,19px) 'Space Grotesk', var(--font); }
+.contrast-numbers .svg-icon { color: #9a8aff; }
+.contrast-card p { color: #96a9b9; font-size: 11px; line-height: 1.6; }
+.contrast-card p strong { color: #eef5fa; }
+.contrast-status { display: inline-block; padding: 7px 9px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; border-radius: 6px; background: #2f303f; color: #b5bdd1; }
+.contrast-status.signal-positive { background: #164238; color: #8cf0d1; }
+@media (max-width: 720px) {
+  .controlled-panel .history-top { align-items: stretch; flex-direction: column; }
+  .controlled-contrasts { grid-template-columns: 1fr; }
+  .controlled-step { padding: 9px; }
+}

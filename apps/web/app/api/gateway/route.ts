@@ -12,6 +12,7 @@ const operations = {
   history: { method: 'GET', path: '/experiments' },
   compare: { method: 'POST', path: '/experiments/compare' },
   adjudicate: { method: 'POST', path: '/experiments/adjudicate' },
+  controlled: { method: 'POST', path: '/investigations/controlled' },
   diagnose: { method: 'POST', path: '/ai/diagnose' },
   cancel: { method: 'DELETE', path: '/experiments/active' },
 } as const;
