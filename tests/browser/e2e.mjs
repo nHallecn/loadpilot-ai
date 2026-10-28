@@ -172,7 +172,7 @@ async function flow() {
 
   // Explicit user action is needed to start two more measured runs.
   await button(/Approve & run these 2 local tests/).click();
-  await checkVisible(page.locator('.retest-measurements'), 'Authorized retest measured', 65000);
+  await checkVisible(page.locator('.retest-measurements>div').nth(1), 'Both authorized retests measured', 65000);
   assert.equal(await page.locator('.retest-measurements>div').count(), 2);
 
   await button(/Ask Muse to reassess/).click();
