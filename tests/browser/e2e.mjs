@@ -25,6 +25,7 @@ const url = 'http://127.0.0.1:3000';
 const processes = [];
 let browser;
 let page;
+const browserDiagnostics = [];
 
 function start(name, command, args, env) {
   const output = createWriteStream(join(artifacts, name + '.log'));
@@ -83,7 +84,13 @@ async function enterAccessKey(key) {
     if (await connect.isEnabled()) return;
     await page.waitForTimeout(350);
   }
-  throw new Error('Dashboard access form did not become interactive after hydration');
+  const state = await page.evaluate(() => ({
+    readyState: document.readyState,
+    passwordValueLength: document.querySelector('input[type=password]')?.value.length ?? -1,
+    connectDisabled: [...document.querySelectorAll('button')].find(b => b.textContent?.includes('Connect'))?.disabled,
+    scriptsLoaded: [...document.scripts].map(s => s.src).filter(Boolean).length,
+  }));
+  throw new Error('Dashboard access form did not hydrate: ' + JSON.stringify({ state, browserDiagnostics }));
 }
 async function checkVisible(locator, label, timeout = 25000) {
   await locator.waitFor({ state: 'visible', timeout });
@@ -99,7 +106,9 @@ async function flow() {
   });
   page = await context.newPage();
   const failures = [];
-  page.on('pageerror', error => failures.push(error.message));
+  page.on('pageerror', error => { failures.push(error.message); browserDiagnostics.push('pageerror ' + error.message); });
+  page.on('console', msg => { if (msg.type() === 'error') browserDiagnostics.push('console ' + msg.text()); });
+  page.on('requestfailed', req => browserDiagnostics.push('request-failed ' + req.url() + ' ' + (req.failure()?.errorText ?? 'unknown')));
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await checkVisible(page.getByRole('heading', { name: /Understand your/ }), 'Dashboard page loaded');
 
@@ -188,8 +197,8 @@ try {
   await untilHealthy('http://127.0.0.1:4000/health',
     async response => (await response.json()).service === 'loadpilot-api', 'Fastify API');
 
-  start('web', 'pnpm', ['--filter', '@loadpilot/web', 'exec', 'next', 'dev', '--hostname', '127.0.0.1', '--port', '3000'], {
-    NODE_ENV: 'development',
+  start('web', 'pnpm', ['--filter', '@loadpilot/web', 'exec', 'next', 'start', '--hostname', '127.0.0.1', '--port', '3000'], {
+    NODE_ENV: 'production',
     LOADPILOT_API_BASE_URL: 'http://127.0.0.1:4000',
     LOADPILOT_BACKEND_TOKEN: apiSecret,
     DASHBOARD_ACCESS_TOKEN: uiSecret,
@@ -199,6 +208,7 @@ try {
   await flow();
 } catch (error) {
   console.error('FAIL Browser integration:', error);
+  console.error('Browser errors and request failures:', browserDiagnostics);
   if (page) {
     await page.screenshot({ path: join(artifacts, 'failed-dashboard.png'), fullPage: true })
       .catch(() => undefined);
