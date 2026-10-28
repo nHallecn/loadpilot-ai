@@ -2,7 +2,7 @@ name: LoadPilot CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/ai-hypothesis-followups]
   push:
     branches: [main]
 
