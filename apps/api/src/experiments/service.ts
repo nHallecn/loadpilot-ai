@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { TestPlan } from '../ai/schemas.js';
 import { createDemoTarget } from './demo-target.js';
 import { runBoundedExperiment, type RunMetrics } from './runner.js';
-import type { ExperimentRequest } from './schemas.js';
+import type { ExperimentRequest, Variant } from './schemas.js';
 
 export type ExperimentRecord = {
   id: string;
   targetId: 'demo-api';
-  variant: 'slow' | 'optimized';
+  variant: Variant;
   plan: TestPlan;
   recordedAt: string;
   status: 'completed' | 'cancelled';
