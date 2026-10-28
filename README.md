@@ -3,7 +3,7 @@
 **Autonomous Software Performance Investigator**  
 Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
-> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis, an interactive Next.js dashboard, and descriptive repeat-trial adjudication with checksum evidence exports. History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
+> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis, an interactive Next.js dashboard, descriptive repeat-trial adjudication with checksum evidence exports, and **one-factor controlled bottleneck contrasts** (on a feature branch pending review). History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
 
 ## The problem
 
@@ -35,6 +35,7 @@ docs/
   DIAGNOSTICS.md    Evidence-citing Meta AI diagnosis and independent verification
   DASHBOARD.md      Codespaces setup, app workflow and security boundaries
   REPEATABILITY.md Repeat trials, transparent thresholds and evidence export
+  CONTROLLED_INVESTIGATION.md  Isolation of serialization vs processing delay
   SUBMISSION.md    Hackathon project description and disclosure copy
   DEMO_SCRIPT.md   Three-minute recording storyboard and narration
   FINAL_CHECKLIST.md Local preflight, evidence and portal steps
@@ -58,6 +59,7 @@ pnpm dev
 - Retrieve history: GET http://localhost:4000/experiments
 - Compare two runs: POST http://localhost:4000/experiments/compare
 - Adjudicate completed pairs: POST http://localhost:4000/experiments/adjudicate (2–3 distinct pairs)
+- Evaluate controlled factors: POST http://localhost:4000/investigations/controlled (3 completed matched variants)
 - Diagnose compatible runs: POST http://localhost:4000/ai/diagnose (private bearer token required)
 - Run tests: `pnpm test`
 - Typecheck: `pnpm typecheck`
@@ -65,7 +67,7 @@ pnpm dev
 
 For local setup, configure `apps/api/.env` and run the Fastify server using `node --env-file=.env --import tsx src/server.ts` from `apps/api`. Configure `apps/web/.env.local` with **server-only** `LOADPILOT_BACKEND_TOKEN` (the API demo token) and a **different** `DASHBOARD_ACCESS_TOKEN` (minimum 24 characters), then run `pnpm dev` from `apps/web`. The web dashboard only uses a same-origin Next.js gateway and keeps secrets server-side. Follow the full [dashboard setup guide](docs/DASHBOARD.md). Never commit secrets or expose the demo backend publicly.
 
-The model issues **proposals only**; a separate deterministic runner executes only the bundled in-process demo API, and never loads user-supplied URLs. Run `node --env-file=.env scripts/demo-experiments.mjs` from `apps/api` to compare slow and optimized variants; add `--with-ai` to pay for one live Meta-generated plan, `--diagnose` to pay for an evidence-checked Meta finding, and/or `--repeat` to repeat the bounded demo twice and export a JSON evidence report without additional AI calls. See [Experiment runner](docs/EXPERIMENTS.md) and [AI diagnosis](docs/DIAGNOSTICS.md). The live Meta API connection was manually validated during development; CI uses mocked Meta responses. Avoid publishing this demo backend without production-grade authentication and quotas.
+The model issues **proposals only**; a separate deterministic runner executes only the bundled in-process demo API, and never loads user-supplied URLs. Run `node --env-file=.env scripts/demo-experiments.mjs` from `apps/api` to compare slow and optimized variants; add `--with-ai` to pay for one live Meta-generated plan, `--diagnose` to pay for an evidence-checked Meta finding, and/or `--repeat` to repeat the bounded demo twice and export a JSON evidence report without additional AI calls. Use `node --env-file=.env scripts/controlled-investigation.mjs` to run the two one-factor contrasts **without model credits**. See [Controlled investigation](docs/CONTROLLED_INVESTIGATION.md), [Experiment runner](docs/EXPERIMENTS.md) and [AI diagnosis](docs/DIAGNOSTICS.md). The live Meta API connection was manually validated during development; CI uses mocked Meta responses. Avoid publishing this demo backend without production-grade authentication and quotas.
 
 ## Hackathon integrity
 
