@@ -20,6 +20,8 @@ type AppOptions = {
   experiments?: ExperimentService;
   diagnostician?: Diagnostician;
   hypothesisAgent?: HypothesisAgent;
+  /** Test-only dependency injection; never accepted from HTTP. */
+  hypothesisCooldownMs?: number;
 };
 
 function validBearer(header: string | undefined, expected: string) {
@@ -55,7 +57,7 @@ export function buildApp(options: AppOptions = {}) {
   const hypothesisSessions = new Map<string, HypothesisSession>();
   let hypothesisBusy = false;
   let lastHypothesisCallAt = 0;
-  const hypothesisCooldownMs = 8000;
+  const hypothesisCooldownMs = options.hypothesisCooldownMs ?? 8000;
   const sessionTtlMs = 30 * 60 * 1000;
   const mapHypothesisError = (error: unknown) => error instanceof HypothesisAgentError
     ? { status: error.kind === 'rate_limited' ? 429 : error.kind === 'timeout' ? 504 : 502, reason: error.kind }
