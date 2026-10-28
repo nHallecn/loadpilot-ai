@@ -136,7 +136,7 @@ async function flow() {
   console.log('PASS Two real measured runs recorded');
 
   await button(/Investigate with AI/).click();
-  await checkVisible(page.getByText('EVIDENCE-CITING HYPOTHESIS'), 'Evidence-checked AI diagnosis displayed');
+  await checkVisible(page.locator('#analysis .finding-tag'), 'Evidence-checked AI diagnosis displayed');
   await checkVisible(page.getByText('Referenced measurements'), 'Cited numeric evidence visible');
 
   // Four additional bounded, real tests and a deterministic adjudication report.
