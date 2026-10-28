@@ -10,7 +10,7 @@
 - [ ] Pull the current `main` in Codespaces: `git pull --ff-only origin main`.
 - [ ] Record the exact commit SHA for your submission: `git rev-parse HEAD`.
 - [ ] Run `pnpm install`, `pnpm test`, `pnpm typecheck`, and `pnpm --filter @loadpilot/web build` from the repository root.
-- [ ] Verify the GitHub Actions checks for the submitted commit have passed.
+- [ ] Verify GitHub Actions **unit tests, typechecks, production build and browser-e2e** pass on the submitted commit. Browser AI output is fixture-only and does not replace live Muse verification.
 - [ ] Verify public repository access in a private/incognito window: https://github.com/nHallecn/loadpilot-ai
 
 ## B. Local services, secrets and privacy
