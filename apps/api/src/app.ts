@@ -11,7 +11,7 @@ import { adjudicateTrials, trialPairsSchema } from './experiments/adjudication.j
 import { controlledRequestSchema, investigateControlledFactors, type ControlledReport } from './experiments/controlled-investigation.js';
 import { randomUUID } from 'node:crypto';
 import { createMetaHypothesisAgent, HypothesisAgentError, type HypothesisAgent } from './ai/meta-hypothesis-agent.js';
-import { initialEvidence, createFollowUp, followUpEvidence, verifyReassessment, proposeRequestSchema, reassessRequestSchema, type HypothesisProposal, type HypothesisReassessment } from './ai/hypothesis-evidence.js';
+import { initialEvidence, createFollowUp, followUpEvidence, verifyReassessment, proposeRequestSchema, reassessRequestSchema, type HypothesisProposal } from './ai/hypothesis-evidence.js';
 import type { TestPlan } from './ai/schemas.js';
 
 type AppOptions = {
@@ -294,7 +294,6 @@ export function buildApp(options: AppOptions = {}) {
       hypothesisSessions.delete(parsed.data.investigationId);
       return reply.code(404).send({ error: 'Investigation expired or not found' });
     }
-    if (session.reviewed) return reply.send({ ...session.reviewed as object, cached: true });
     const before = experiments.get(parsed.data.followUpBeforeRunId);
     const after = experiments.get(parsed.data.followUpAfterRunId);
     if (!before || !after) return reply.code(404).send({ error: 'Follow-up run not found' });
@@ -306,6 +305,13 @@ export function buildApp(options: AppOptions = {}) {
     if (!evidence) return reply.code(422).send({
       error: 'Follow-up requires two new, completed, correctly ordered runs using the exact approved plan',
     });
+    if (session.reviewed) {
+      const previous = session.reviewed as { followUpRunIds: string[] };
+      if (previous.followUpRunIds[0] !== before.id || previous.followUpRunIds[1] !== after.id) {
+        return reply.code(409).send({ error: 'This investigation already reviewed a different follow-up' });
+      }
+      return reply.send({ ...session.reviewed as object, cached: true });
+    }
     if (hypothesisBusy || Date.now() - lastHypothesisCallAt < hypothesisCooldownMs) {
       return reply.code(429).send({ error: 'AI review busy or cooling down' });
     }
