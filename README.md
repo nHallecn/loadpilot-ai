@@ -76,6 +76,10 @@ The model issues **proposals only**; a separate deterministic runner executes on
 
 Only functionality created during the event will be demonstrated or presented as new. Existing personal-project code is not copied into this repository. Third-party libraries are listed in package manifests; see [HACKATHON_CONTRIBUTIONS.md](HACKATHON_CONTRIBUTIONS.md).
 
+## Browser-level validation
+
+GitHub Actions runs a **headless Chromium end-to-end test** of the real Next.js UI, private gateway, Fastify backend and bounded sample runner. AI output is injected as an explicit test fixture: **no Meta API credits are used** and screenshots from CI are **not live Muse Spark evidence**. The test exercises authentication, planning, two-run comparison, model diagnosis, repeat-trial JSON export/checksum, one-factor contrast, explicit follow-up approval and evidence review. See [Browser testing and live recording](docs/BROWSER_VALIDATION.md).
+
 ## Submission
 
 The [submission copy](docs/SUBMISSION.md), [three-minute demonstration script](docs/DEMO_SCRIPT.md), and [final checklist](docs/FINAL_CHECKLIST.md) are prepared. **The video has not been recorded or uploaded and the official submission has not been made.** Confirm actual portal fields, judge access and deadlines before claiming submission.
