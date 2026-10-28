@@ -125,8 +125,40 @@ export type ControlledReport = {
   integrity: { digest: string; assurance: string };
 };
 
+export type HypothesisSession = {
+  investigationId: string;
+  model: string;
+  hypothesis: {
+    hypothesis: 'serialization_overhead' | 'processing_delay';
+    initialSignal: string;
+    evidenceIds: string[];
+    rationale: string;
+    followUpAction: 'probe_serialization_high_load' | 'repeat_serialization' | 'repeat_processing';
+    whyThisTest: string;
+  };
+  followUp: { plan: TestPlan; variants: ['slow','parallel_slow'] | ['parallel_slow','optimized']; status: 'proposal_only' };
+  cached: boolean;
+};
+
+export type HypothesisReview = {
+  status: 'followup_evaluated';
+  model: string;
+  initialSignal: string;
+  followUpSignal: string;
+  assessment: {
+    verdict: 'replicated_signal' | 'load_dependent_signal_observed' | 'inconsistent_signal' | 'still_inconclusive';
+    explanation: string;
+    nextStep: string;
+    evidenceIds: string[];
+  };
+  citedEvidence: Array<{id:string; value:number}>;
+  load: {initialConcurrency:number; initialRps:number; followupConcurrency:number; followupRps:number};
+  cached: boolean;
+  limitations: string[];
+};
+
 export type DashboardAction =
-  | 'health' | 'status' | 'plan' | 'run' | 'history' | 'compare' | 'diagnose' | 'cancel' | 'adjudicate' | 'controlled';
+  | 'health' | 'status' | 'plan' | 'run' | 'history' | 'compare' | 'diagnose' | 'cancel' | 'adjudicate' | 'controlled' | 'hypothesize' | 'reassess';
 
 export const defaultPlan: TestPlan = {
   scenario: 'baseline',

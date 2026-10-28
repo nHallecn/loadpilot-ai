@@ -8,13 +8,20 @@ import { z } from 'zod';
 import { createMetaDiagnostician, DiagnosticError, type Diagnostician } from './ai/meta-diagnostician.js';
 import { diagnosisRequestSchema, prepareEvidence } from './ai/diagnostic-evidence.js';
 import { adjudicateTrials, trialPairsSchema } from './experiments/adjudication.js';
-import { controlledRequestSchema, investigateControlledFactors } from './experiments/controlled-investigation.js';
+import { controlledRequestSchema, investigateControlledFactors, type ControlledReport } from './experiments/controlled-investigation.js';
+import { randomUUID } from 'node:crypto';
+import { createMetaHypothesisAgent, HypothesisAgentError, type HypothesisAgent } from './ai/meta-hypothesis-agent.js';
+import { initialEvidence, createFollowUp, followUpEvidence, verifyReassessment, proposeRequestSchema, reassessRequestSchema, type HypothesisProposal } from './ai/hypothesis-evidence.js';
+import type { TestPlan } from './ai/schemas.js';
 
 type AppOptions = {
   planner?: Planner;
   demoToken?: string;
   experiments?: ExperimentService;
   diagnostician?: Diagnostician;
+  hypothesisAgent?: HypothesisAgent;
+  /** Test-only dependency injection; never accepted from HTTP. */
+  hypothesisCooldownMs?: number;
 };
 
 function validBearer(header: string | undefined, expected: string) {
@@ -34,6 +41,27 @@ export function buildApp(options: AppOptions = {}) {
     (apiKey ? createMetaPlanner({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
   const diagnostician = options.diagnostician ??
     (apiKey ? createMetaDiagnostician({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
+  const hypothesisAgent = options.hypothesisAgent ??
+    (apiKey ? createMetaHypothesisAgent({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
+  type HypothesisSession = {
+    id: string;
+    key: string;
+    createdAt: number;
+    report: ControlledReport;
+    proposal: HypothesisProposal;
+    model: string;
+    plan: TestPlan;
+    variants: ['slow', 'parallel_slow'] | ['parallel_slow', 'optimized'];
+    reviewed?: unknown;
+  };
+  const hypothesisSessions = new Map<string, HypothesisSession>();
+  let hypothesisBusy = false;
+  let lastHypothesisCallAt = 0;
+  const hypothesisCooldownMs = options.hypothesisCooldownMs ?? 8000;
+  const sessionTtlMs = 30 * 60 * 1000;
+  const mapHypothesisError = (error: unknown) => error instanceof HypothesisAgentError
+    ? { status: error.kind === 'rate_limited' ? 429 : error.kind === 'timeout' ? 504 : 502, reason: error.kind }
+    : { status: 502, reason: 'upstream' };
   const diagnosisCache = new Map<string, unknown>();
   let diagnosisActive = false;
   let lastUncachedDiagnosis = 0;
@@ -187,6 +215,152 @@ export function buildApp(options: AppOptions = {}) {
       });
     }
     return reply.code(200).send(report.report);
+  });
+
+  /**
+   * A Muse Spark hypothesis is advisory: only deterministic code constructs
+   * the selectable two-variant follow-up. No server-side auto-execution.
+   */
+  app.post('/ai/hypotheses', async (request, reply) => {
+    if (!hypothesisAgent || !demoToken) return reply.code(503).send({ error: 'AI hypotheses not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const parsed = proposeRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Invalid hypothesis input' });
+    const source = investigateControlledFactors(experiments, parsed.data);
+    if (!source.ok) return reply.code(source.reason === 'missing_run' ? 404 : 422).send({
+      error: 'Three compatible completed controlled experiments are required',
+    });
+
+    // Identical requests reuse stored results to avoid unnecessary paid calls.
+    const key = Object.values(parsed.data).join(':');
+    for (const [id, session] of hypothesisSessions) {
+      if (Date.now() - session.createdAt > sessionTtlMs) {
+        hypothesisSessions.delete(id);
+      } else if (session.key === key) {
+        return reply.send({
+          investigationId: session.id,
+          model: session.model,
+          hypothesis: session.proposal,
+          followUp: { plan: session.plan, variants: session.variants, status: 'proposal_only' },
+          cached: true,
+          note: 'No experiment is launched by the model or this endpoint.',
+        });
+      }
+    }
+    if (hypothesisBusy || Date.now() - lastHypothesisCallAt < hypothesisCooldownMs) {
+      return reply.code(429).send({ error: 'AI hypothesis request busy or cooling down' });
+    }
+    hypothesisBusy = true;
+    lastHypothesisCallAt = Date.now();
+    try {
+      const { model, proposal } = await hypothesisAgent.propose(initialEvidence(source.report));
+      const followUp = createFollowUp(source.report, proposal);
+      if (!followUp) return reply.code(502).send({ error: 'Model proposal rejected by deterministic safety validation' });
+      const id = randomUUID();
+      const session: HypothesisSession = {
+        id, key, createdAt: Date.now(), report: source.report, proposal, model,
+        plan: followUp.plan, variants: followUp.variants,
+      };
+      hypothesisSessions.set(id, session);
+      while (hypothesisSessions.size > 8) {
+        const oldest = hypothesisSessions.keys().next().value;
+        if (oldest) hypothesisSessions.delete(oldest);
+      }
+      return reply.send({
+        investigationId: id,
+        model,
+        hypothesis: proposal,
+        followUp: { plan: followUp.plan, variants: followUp.variants, status: 'proposal_only' },
+        cached: false,
+        note: 'The model proposed a test; a user must explicitly launch each bounded run.',
+      });
+    } catch (error) {
+      const mapped = mapHypothesisError(error);
+      return reply.code(mapped.status).send({ error: 'AI hypothesis unavailable', reason: mapped.reason });
+    } finally {
+      hypothesisBusy = false;
+    }
+  });
+
+  app.post('/ai/reassess', async (request, reply) => {
+    if (!hypothesisAgent || !demoToken) return reply.code(503).send({ error: 'AI review not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const parsed = reassessRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Invalid reassessment request' });
+    const session = hypothesisSessions.get(parsed.data.investigationId);
+    if (!session || Date.now() - session.createdAt > sessionTtlMs) {
+      hypothesisSessions.delete(parsed.data.investigationId);
+      return reply.code(404).send({ error: 'Investigation expired or not found' });
+    }
+    const before = experiments.get(parsed.data.followUpBeforeRunId);
+    const after = experiments.get(parsed.data.followUpAfterRunId);
+    if (!before || !after) return reply.code(404).send({ error: 'Follow-up run not found' });
+
+    const evidence = followUpEvidence(
+      session.report, session.proposal, session.proposal.followUpAction,
+      session.plan, before, after,
+    );
+    if (!evidence) return reply.code(422).send({
+      error: 'Follow-up requires two new, completed, correctly ordered runs using the exact approved plan',
+    });
+    if (session.reviewed) {
+      const previous = session.reviewed as { followUpRunIds: string[] };
+      if (previous.followUpRunIds[0] !== before.id || previous.followUpRunIds[1] !== after.id) {
+        return reply.code(409).send({ error: 'This investigation already reviewed a different follow-up' });
+      }
+      return reply.send({ ...session.reviewed as object, cached: true });
+    }
+    if (hypothesisBusy || Date.now() - lastHypothesisCallAt < hypothesisCooldownMs) {
+      return reply.code(429).send({ error: 'AI review busy or cooling down' });
+    }
+    hypothesisBusy = true;
+    lastHypothesisCallAt = Date.now();
+
+    try {
+      const { model, assessment } = await hypothesisAgent.reassess(evidence);
+      if (!verifyReassessment(evidence, assessment)) {
+        return reply.code(502).send({ error: 'Model assessment contradicted the measured evidence' });
+      }
+      const numeric = {
+        'initial.before_p95_ms': evidence.initial.beforeP95Ms,
+        'initial.after_p95_ms': evidence.initial.afterP95Ms,
+        'followup.before_p95_ms': evidence.followup.beforeP95Ms,
+        'followup.after_p95_ms': evidence.followup.afterP95Ms,
+        'initial.before_requests': evidence.initial.beforeRequests,
+        'initial.after_requests': evidence.initial.afterRequests,
+        'followup.before_requests': evidence.followup.beforeRequests,
+        'followup.after_requests': evidence.followup.afterRequests,
+      };
+      const response = {
+        status: 'followup_evaluated',
+        investigationId: session.id,
+        model,
+        hypothesis: session.proposal.hypothesis,
+        initialSignal: evidence.initial.signal,
+        followUpSignal: evidence.followup.signal,
+        assessment,
+        citedEvidence: assessment.evidenceIds.map(id => ({ id, value: numeric[id] })),
+        load: evidence.load,
+        followUpRunIds: [before.id, after.id],
+        limitations: [
+          'This is descriptive evidence from an in-process synthetic service, not production.',
+          'Single ordered trials and changed traffic conditions do not prove causation.',
+          'The model does not execute experiments; this outcome was checked against real metrics.',
+        ],
+        cached: false,
+      };
+      session.reviewed = response;
+      return reply.send(response);
+    } catch (error) {
+      const mapped = mapHypothesisError(error);
+      return reply.code(mapped.status).send({ error: 'AI review unavailable', reason: mapped.reason });
+    } finally {
+      hypothesisBusy = false;
+    }
   });
 
   app.post('/ai/diagnose', async (request, reply) => {

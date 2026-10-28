@@ -25,6 +25,7 @@ jobs:
           node --check apps/api/scripts/demo-preflight.mjs
           node --check apps/api/scripts/demo-experiments.mjs
           node --check apps/api/scripts/controlled-investigation.mjs
+          node --check apps/api/scripts/ai-hypothesis-demo.mjs
       - name: Unit tests
         run: pnpm test
       - name: Typecheck

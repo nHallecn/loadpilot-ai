@@ -43,7 +43,7 @@ A Next.js dashboard makes the workflow interactive. A controlled investigation o
 
 ### How Meta's model is used
 
-Muse Spark is part of the **runtime product**, not just a code-generation tool. It converts a free-text performance question into a strictly typed experiment proposal and later turns measurements into a structured diagnostic hypothesis. Model output **never executes a test directly**. The application validates plans, authorizes the only demo target, enforces concurrency/duration/rate limits, and verifies diagnostic evidence independently of the model.
+Muse Spark is part of the **runtime product**, not just a code-generation tool. It converts a free-text performance question into a strictly typed experiment proposal and later turns measurements into a structured diagnostic hypothesis. A follow-up workflow can select one of the controlled bottleneck hypotheses, propose an additional bounded experiment for explicit user authorization, and reassess it using independently verified evidence. Model output **never executes a test directly**. The application validates plans, authorizes the only demo target, enforces concurrency/duration/rate limits, and verifies diagnostic evidence independently of the model.
 
 A failed model response is an error rather than permission to fabricate results.
 

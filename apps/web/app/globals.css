@@ -332,3 +332,27 @@ h3 { font-size: 21px; letter-spacing: -.8px; margin-bottom: 7px; }
   .controlled-contrasts { grid-template-columns: 1fr; }
   .controlled-step { padding: 9px; }
 }
+
+
+/* AI hypothesis proposals, user-approved follow-ups, and evidence reviews */
+.hypothesis-panel { margin-top: 22px; padding: 19px; border-radius: 12px; background: #191a30; border: 1px solid #58517e; }
+.hypothesis-head { display: flex; align-items: center; justify-content: space-between; gap: 19px; }
+.hypothesis-head h4 { font-size: 17px; margin: 7px 0 8px; }
+.hypothesis-head p { max-width: 650px; }
+.hypothesis-action { margin: 0; min-width: 250px; }
+.hypothesis-details { margin-top: 19px; border-top: 1px solid #484162; padding-top: 20px; }
+.hypothesis-details h4 { margin: 12px 0; font-size: 16px; text-transform: capitalize; }
+.hypothesis-details p { color: #aab6d2; line-height: 1.75; font-size: 12px; }
+.hypothesis-details p strong { color: #eeeaff; }
+.hypothesis-details .field-label { margin-top: 18px; color: #c1b4ff; }
+.hypothesis-details>.button { margin: 12px 10px 10px 0; }
+.retest-measurements { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+.retest-measurements>div { padding: 13px; background: #0f1d29; border: 1px solid #34475a; border-radius: 9px; flex: 1; min-width: 170px; }
+.retest-measurements small, .retest-measurements span { color: #8e9db5; display: block; font-size: 10px; }
+.retest-measurements strong { display: block; font: 700 22px 'Space Grotesk', var(--font); margin: 7px 0; color: #9ee3d1; }
+.hypothesis-review { margin-top: 20px; border: 1px solid #37645c; background: #142b27; border-radius: 12px; padding: 18px; }
+.hypothesis-review h4 { font-size: 20px; margin: 9px 0 12px; text-transform: capitalize; color: #77e3c8; }
+.hypothesis-review p { font-size: 12px; color: #b7d7d1; line-height: 1.7; }
+.hypothesis-review .evidence-list { margin: 15px 0; max-width: 620px; }
+.hypothesis-review .evidence-row { border-color: #2d554d; }
+@media (max-width: 790px) { .hypothesis-head { flex-direction: column; align-items: stretch; } .hypothesis-action { min-width: unset; white-space: normal; } }
