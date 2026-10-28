@@ -4,7 +4,7 @@
 
 **Format:** desktop screen capture with optional narration and simple captions. Record **the actual interactive dashboard and real data**. Do not substitute mock responses, precomputed charts, or an animation for product execution. A short edit that removes genuine waiting time is acceptable if you visibly label the cut (for example, `Wait time shortened · actual output shown`).
 
-**Before recording:** run `node --env-file=.env scripts/demo-preflight.mjs` from `apps/api`. It performs only local read-only checks, no paid Meta call and no load test. Start Fastify on port 4000 and Next.js on port 3000. Confirm the app works once manually before capturing, and do not expose any credential in the recording.
+**Before recording:** CI headless-browser coverage uses injected AI fixtures, not a genuine Meta response. The video must capture your actual live Muse requests in your private Codespace. Run `node --env-file=.env scripts/demo-preflight.mjs` from `apps/api`. It performs only local read-only checks, no paid Meta call and no load test. Start Fastify on port 4000 and Next.js on port 3000. Confirm the app works once manually before capturing, and do not expose any credential in the recording.
 
 ## Storyboard and narration
 
