@@ -155,6 +155,7 @@ describe('protected proposal → user-approved retest → independent AI review'
   };
   const app = buildApp({
     demoToken: 'hypothesis-protected-test-token', experiments, hypothesisAgent: model,
+    hypothesisCooldownMs: 0,
   });
   afterAll(async () => app.close());
   const bearer = { authorization: 'Bearer hypothesis-protected-test-token' };
