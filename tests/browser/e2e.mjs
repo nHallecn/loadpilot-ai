@@ -114,8 +114,8 @@ async function flow() {
 
   await enterAccessKey('wrong-private-test-secret');
   await button(/^Connect/).click();
-  await checkVisible(page.getByRole('alert'), 'Invalid access key rejected');
-  assert.match(await page.getByRole('alert').innerText(), /invalid dashboard access key/i);
+  await checkVisible(page.locator('.alert'), 'Invalid access key rejected');
+  assert.match(await page.locator('.alert').innerText(), /invalid dashboard access key/i);
 
   await enterAccessKey(uiSecret);
   await button(/^Connect/).click();
