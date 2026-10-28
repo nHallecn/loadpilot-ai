@@ -12,3 +12,8 @@ coverage/
 
 # Locally exported benchmark evidence (user-controlled; not public source)
 apps/api/reports/
+
+# Isolated local browser integration artifacts and dependency installation
+tests/browser/artifacts/
+tests/browser/node_modules/
+tests/browser/package-lock.json
