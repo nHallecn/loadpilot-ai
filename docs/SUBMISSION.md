@@ -23,7 +23,7 @@ Official event information: https://dev.meta.ai/events/global-hackathon
 
 ## Short pitch (approximately 60 words)
 
-LoadPilot AI turns performance testing into a controlled, evidence-driven investigation. Meta Muse Spark proposes bounded test plans, a separate runner measures actual latency and throughput, and an AI diagnostic agent cites those measurements to suggest testable explanations. The demo includes repeat-trial adjudication and integrity-checkable evidence exports. It is built for developers who need more than a performance chart.
+LoadPilot AI turns performance testing into a controlled, evidence-driven investigation. Meta Muse Spark proposes bounded test plans, a separate runner measures actual latency and throughput, and an AI diagnostic agent cites those measurements to suggest testable explanations. The demo includes repeat-trial adjudication, one-factor bottleneck isolation and integrity-checkable evidence exports. It is built for developers who need more than a performance chart.
 
 ## Main project description — ready to paste and adjust
 
@@ -39,7 +39,7 @@ Load-testing tools show that a system has slowed down, but developers still face
 2. **Measure:** A deterministic, safety-limited runner tests an authorized, bundled sample API. It records real request durations, p50/p95/p99 latency, observed throughput, errors, and run metadata.
 3. **Investigate:** Muse Spark analyzes numeric evidence from completed runs and returns an uncertainty-aware hypothesis, exact evidence references, and a *proposed* next experiment. An independent numeric verifier rejects unsupported conclusion categories or missing citations.
 
-A Next.js dashboard makes the workflow interactive. A repeated-trial module runs three matched slow/optimized pairs under explicit user control, reports descriptive consistency, and exports a JSON evidence manifest with SHA-256 checksum.
+A Next.js dashboard makes the workflow interactive. A controlled investigation offers two distinct hypotheses: keeping simulated work at 80ms while changing serialized work into concurrent handlers, then keeping concurrency unchanged while reducing simulated work from 80ms to 8ms. The contrasts are descriptive and synthetic, not a production diagnosis. A repeated-trial module runs three matched slow/optimized pairs under explicit user control, reports descriptive consistency, and exports a JSON evidence manifest with SHA-256 checksum.
 
 ### How Meta's model is used
 
@@ -64,7 +64,7 @@ The public repository contains the original TypeScript/pnpm monorepo, Fastify AP
 ### Limitations — include these in the final submission
 
 - The demo targets an **in-process Fastify.inject service** only; it does not send traffic to arbitrary websites or measure external network latency.
-- The two sample variants change both serialization and simulated work duration. An observed p95 reduction does **not** establish a single causal bottleneck.
+- The original slow/optimized variants change both serialization and simulated work duration. The additional one-factor contrasts separate those configured factors in the synthetic demonstration, but do **not** establish a production bottleneck or statistical causation.
 - Three trial pairs support only **descriptive repeatability**, not statistical significance. Run order is not randomized.
 - The SHA-256 report checksum is **not a cryptographic signature** and does not prove provenance or prevent a malicious checksum replacement.
 - Experiment history is **in memory**, lost on backend restart. There is no multi-tenant production authentication, public hosted backend, durable job scheduler, or production load testing.
