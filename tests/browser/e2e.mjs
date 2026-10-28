@@ -73,6 +73,18 @@ async function gateway(action, payload) {
 function button(pattern) {
   return page.getByRole('button', { name: pattern });
 }
+
+/** React hydration can lag behind Next.js DOMContentLoaded on CI cold starts. */
+async function enterAccessKey(key) {
+  const field = page.getByLabel('Dashboard access key');
+  const connect = button(/^Connect/);
+  for (let attempt = 0; attempt < 15; attempt++) {
+    await field.fill(key);
+    if (await connect.isEnabled()) return;
+    await page.waitForTimeout(350);
+  }
+  throw new Error('Dashboard access form did not become interactive after hydration');
+}
 async function checkVisible(locator, label, timeout = 25000) {
   await locator.waitFor({ state: 'visible', timeout });
   console.log('PASS', label);
@@ -91,12 +103,12 @@ async function flow() {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await checkVisible(page.getByRole('heading', { name: /Understand your/ }), 'Dashboard page loaded');
 
-  await page.getByLabel('Dashboard access key').fill('wrong-private-test-secret');
+  await enterAccessKey('wrong-private-test-secret');
   await button(/^Connect/).click();
   await checkVisible(page.getByRole('alert'), 'Invalid access key rejected');
   assert.match(await page.getByRole('alert').innerText(), /invalid dashboard access key/i);
 
-  await page.getByLabel('Dashboard access key').fill(uiSecret);
+  await enterAccessKey(uiSecret);
   await button(/^Connect/).click();
   await checkVisible(page.getByText('API CONNECTED'), 'Private API connected');
 
