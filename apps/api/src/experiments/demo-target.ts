@@ -10,16 +10,18 @@ export function createDemoTarget() {
   let serialQueue: Promise<void> = Promise.resolve();
 
   app.get<{ Querystring: { variant: Variant } }>('/work', async (request) => {
-    if (request.query.variant === 'slow') {
+    const serialized = request.query.variant === 'slow';
+    const workDelayMs = request.query.variant === 'optimized' ? 8 : 80;
+    if (serialized) {
       // Deliberate head-of-line bottleneck: serialize a simulated data query.
       const operation = serialQueue.then(
-        () => new Promise<void>((resolve) => setTimeout(resolve, 80)),
+        () => new Promise<void>((resolve) => setTimeout(resolve, workDelayMs)),
       );
       serialQueue = operation.catch(() => undefined);
       await operation;
     } else {
-      // Same logical response, independent short asynchronous work.
-      await new Promise<void>((resolve) => setTimeout(resolve, 8));
+      // Same logical response. parallel_slow keeps 80ms work; optimized uses 8ms.
+      await new Promise<void>((resolve) => setTimeout(resolve, workDelayMs));
     }
 
     return { ok: true, variant: request.query.variant };
