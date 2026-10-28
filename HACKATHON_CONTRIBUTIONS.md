@@ -18,6 +18,7 @@ Meta Global AI Developer Hackathon, October 26–November 4, 2026.
 | AI diagnosis of measured evidence | Implemented on feat/evidence-based-diagnostics (merged) | Strict evidence manifest, JSON schema, independent numeric oracle, protected endpoint and tests |
 | Before/after measured comparison | Implemented on feat/load-testing-engine | Experiment comparison endpoint and test |
 | Controlled bottleneck isolation | Implemented on feat/controlled-bottleneck-investigation (pending review) | New `parallel_slow` variant, two single-factor contrasts, typed evidence report, dashboard and tests |
+| Meta-guided hypothesis and user-authorized retest | Implemented on feat/ai-hypothesis-followups (pending review) | Two-stage model integration, numeric verification, allowlisted test plan, dashboard and tests |
 | Three-minute demonstration | Script and recording checklist prepared; video not recorded | docs/DEMO_SCRIPT.md, docs/FINAL_CHECKLIST.md |
 | Descriptive repeated-trial adjudication | Implemented on feat/repeat-trial-evidence | Matching completed pairs, deterministic threshold verdict, transparent limitations and tests |
 | Evidence export | Implemented on feat/repeat-trial-evidence | Full source snapshot + SHA-256 checksum; this is not a digital signature or permanent storage |
