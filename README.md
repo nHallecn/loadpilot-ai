@@ -3,7 +3,7 @@
 **Autonomous Software Performance Investigator**  
 Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
-> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis an interactive Next.js dashboard, and descriptive repeat-trial adjudication with checksum evidence exports (repeatability on `feat/repeat-trial-evidence`, pending PR review). History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
+> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis, an interactive Next.js dashboard, and descriptive repeat-trial adjudication with checksum evidence exports. History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
 
 ## The problem
 
@@ -35,6 +35,9 @@ docs/
   DIAGNOSTICS.md    Evidence-citing Meta AI diagnosis and independent verification
   DASHBOARD.md      Codespaces setup, app workflow and security boundaries
   REPEATABILITY.md Repeat trials, transparent thresholds and evidence export
+  SUBMISSION.md    Hackathon project description and disclosure copy
+  DEMO_SCRIPT.md   Three-minute recording storyboard and narration
+  FINAL_CHECKLIST.md Local preflight, evidence and portal steps
 HACKATHON_CONTRIBUTIONS.md  Evidence log and third-party disclosure
 ```
 
@@ -58,6 +61,7 @@ pnpm dev
 - Diagnose compatible runs: POST http://localhost:4000/ai/diagnose (private bearer token required)
 - Run tests: `pnpm test`
 - Typecheck: `pnpm typecheck`
+- Read-only recording preflight: `cd apps/api && node --env-file=.env scripts/demo-preflight.mjs` (no Meta calls or experiments)
 
 For local setup, configure `apps/api/.env` and run the Fastify server using `node --env-file=.env --import tsx src/server.ts` from `apps/api`. Configure `apps/web/.env.local` with **server-only** `LOADPILOT_BACKEND_TOKEN` (the API demo token) and a **different** `DASHBOARD_ACCESS_TOKEN` (minimum 24 characters), then run `pnpm dev` from `apps/web`. The web dashboard only uses a same-origin Next.js gateway and keeps secrets server-side. Follow the full [dashboard setup guide](docs/DASHBOARD.md). Never commit secrets or expose the demo backend publicly.
 
@@ -68,6 +72,8 @@ The model issues **proposals only**; a separate deterministic runner executes on
 Only functionality created during the event will be demonstrated or presented as new. Existing personal-project code is not copied into this repository. Third-party libraries are listed in package manifests; see [HACKATHON_CONTRIBUTIONS.md](HACKATHON_CONTRIBUTIONS.md).
 
 ## Submission
+
+The [submission copy](docs/SUBMISSION.md), [three-minute demonstration script](docs/DEMO_SCRIPT.md), and [final checklist](docs/FINAL_CHECKLIST.md) are prepared. **The video has not been recorded or uploaded and the official submission has not been made.** Confirm actual portal fields, judge access and deadlines before claiming submission.
 
 - Team: **LoadPilot Labs** (working name)
 - Track: **Indie Developer**
