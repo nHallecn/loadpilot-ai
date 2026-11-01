@@ -11,7 +11,7 @@ A responsive Next.js interface providing:
 - Evidence-citing AI diagnosis, supporting numeric measurements and non-executing next-step proposal.
 - Recent run history from the Fastify process (up to 12, lost on restart).
 
-The target is **only** the bundled `demo-api`; no external URL inputs or Internet load testing.
+The **sample-experiment workflow** targets only the bundled `demo-api`. A separate **Test Your API** workflow supports an operator-consented, exact loopback HTTP GET endpoint with lower execution caps; neither allows arbitrary Internet URLs. See [LOCAL_APP_TESTING.md](LOCAL_APP_TESTING.md).
 
 ## Codespaces setup
 
@@ -54,7 +54,11 @@ Open http://localhost:3000 (or the **private** Codespaces 3000 forwarded-port pr
 
 **Do not make port 3000 public.** The current gate is a hackathon demo key, not multi-user authentication.
 
-## Demo steps
+## Primary real-HTTP demo
+
+Start and authorize a separate local Shop API as described in [LOCAL_APP_TESTING.md](LOCAL_APP_TESTING.md). In the dashboard, run **Test my API**, inspect the measured baseline, manually update the shop app, click **Run matched follow-up**, then click **Download HTTP evidence JSON** to save the two HTTP run records and comparison. A separately requested paid Muse explanation can be added after the comparison. AI does not execute tests, and a measured contrast does not prove causality.
+
+## Secondary in-process demo steps
 
 1. Connect the private workspace (no Meta credits used).
 2. Optionally click **Generate plan with Muse Spark** (one paid planning request). Or keep safe manual defaults.
@@ -68,10 +72,10 @@ Open http://localhost:3000 (or the **private** Codespaces 3000 forwarded-port pr
 
 ## Security and architecture
 
-Browser → same-origin Next.js `POST /api/gateway` (with a private dashboard access key) → **server-side only** Fastify on `127.0.0.1:4000` (private backend bearer token) → bounded in-process demo API / server-side Meta API.
+Browser → same-origin Next.js `POST /api/gateway` (private dashboard access key) → **server-side only** Fastify on `127.0.0.1:4000` (private backend bearer token) → bounded in-process demo **or** operator-approved local HTTP GET target / server-side Meta API.
 
 - The web UI never receives `MODEL_API_KEY` or the Fastify bearer token.
-- The gateway accepts only twelve fixed operations (`health`, `status`, `plan`, `run`, `history`, `compare`, `diagnose`, `cancel`, `adjudicate`, `controlled`, `hypothesize`, `reassess`); arbitrary upstream URLs and paths are impossible.
+- The gateway uses an explicit fixed operation allowlist (including `appStatus`, `appRun`, `appCompare`, `appDiagnose`, and `appCancel` for real HTTP). Arbitrary upstream URLs and paths are impossible.
 - The upstream hostname is restricted to `localhost` or `127.0.0.1` via an environment variable. No remote backend is supported yet.
 - No persistent credentials in browser localStorage or cookies. Access key is cleared on lock/reload.
 - Web routes require a strong, separate dashboard access token and use timing-safe comparisons.

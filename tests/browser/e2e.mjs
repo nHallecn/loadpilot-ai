@@ -110,7 +110,9 @@ async function flow() {
   page.on('console', msg => { if (msg.type() === 'error') browserDiagnostics.push('console ' + msg.text()); });
   page.on('requestfailed', req => browserDiagnostics.push('request-failed ' + req.url() + ' ' + (req.failure()?.errorText ?? 'unknown')));
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await checkVisible(page.getByRole('heading', { name: /Find the slowdown/ }), 'Dashboard page loaded');
+  await checkVisible(page.getByRole('heading', { name: /AI investigates why your API is slow/ }), 'New evidence-first hero loaded');
+  await checkVisible(page.getByRole('heading', { name: 'AI cannot execute tests.' }), 'Model execution boundary is visible');
+  await checkVisible(page.locator('.real-http-hero'), 'Local HTTP demo is prominent');
   await checkVisible(page.getByRole('heading', { name: 'Test your API', exact: true }), 'Customer API testing is the primary feature');
   await checkVisible(page.locator('.hero-primary-action'), 'Primary hero action points to application testing');
   assert.equal(await page.locator('.hero-primary-action').getAttribute('href'), '#my-application');
@@ -148,7 +150,22 @@ async function flow() {
   await button(/Ask Muse to explain the measured change/).click();
   await checkVisible(page.locator('.app-finding'), 'Numeric-verified local app AI finding rendered');
   assert.equal((await gateway('appHistory')).runs.length, 2);
-  console.log('PASS Owner-authorized real HTTP app tests and evidence-checked AI fixture');
+  // The primary judge demo must export actual HTTP source data, not in-process fixtures.
+  const httpDownloadEvent = page.waitForEvent('download');
+  await button(/Download HTTP evidence JSON/).click();
+  const httpDownload = await httpDownloadEvent;
+  assert.match(httpDownload.suggestedFilename(), /^loadpilot-http-evidence-[a-f0-9]{8}-[a-f0-9]{8}\.json$/);
+  const httpReport = JSON.parse(await readFile(await httpDownload.path(), 'utf8'));
+  assert.equal(httpReport.schemaVersion, 'loadpilot.local-http-evidence.v1');
+  assert.equal(httpReport.baseline.executionMode, 'authorized_loopback_http_get');
+  assert.equal(httpReport.followUp.executionMode, 'authorized_loopback_http_get');
+  assert.equal(httpReport.comparison.beforeRunId, httpReport.baseline.id);
+  assert.equal(httpReport.comparison.afterRunId, httpReport.followUp.id);
+  assert.ok(httpReport.modelInterpretation?.citedEvidence?.length > 0);
+  assert.ok(httpReport.limitations.some(value => /causality/i.test(value)));
+  assert.ok(!JSON.stringify(httpReport).includes(apiSecret));
+  assert.ok(!JSON.stringify(httpReport).includes(uiSecret));
+  console.log('PASS Owner-authorized real HTTP tests, verified AI fixture and unsigned JSON evidence export');
 
   // Live frontend -> Next gateway -> mock Meta planning adapter.
   await button(/Generate plan with Muse Spark/).click();
