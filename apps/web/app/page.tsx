@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import {
   compactId, defaultPlan, formatNumber,
   type Comparison, type DashboardAction, type ExperimentRun, type Finding, type TestPlan,
@@ -688,7 +689,7 @@ export default function HomePage() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand"><div className="brand-mark"><SymbolIcon kind="pulse"/></div><div><strong>loadpilot<span>.ai</span></strong><small>PERFORMANCE INTELLIGENCE</small></div></div>
+        <div className="brand"><div className="brand-mark"><Image src="/loadpilot-logo.svg" alt="" width={36} height={36} priority /></div><div><strong>loadpilot<span>.ai</span></strong><small>PERFORMANCE INTELLIGENCE</small></div></div>
         <div className="side-label">WORKSPACE</div>
         <nav className="side-nav" aria-label="Dashboard navigation">
           <a className="nav-active" href="#overview"><SymbolIcon kind="grid"/> Overview</a>

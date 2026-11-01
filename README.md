@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/loadpilot-readme-banner.png" alt="LoadPilot AI — Autonomous Performance Investigator" width="900" />
+</p>
+
 # LoadPilot AI
 
 **Autonomous Software Performance Investigator**  

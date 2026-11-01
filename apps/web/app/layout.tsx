@@ -3,6 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'LoadPilot AI',
+  icons: { icon: '/loadpilot-logo.svg', shortcut: '/loadpilot-logo.svg' },
   description: 'Plan bounded performance experiments, measure real latency and diagnose with Meta Muse Spark AI.',
 };
 
