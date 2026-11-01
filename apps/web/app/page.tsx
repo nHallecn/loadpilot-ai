@@ -107,9 +107,9 @@ function SystemJourney({
   const observed = Boolean(before && after && before.status === 'completed' && after.status === 'completed');
   return (
     <div className={'journey-visual ' + (running ? 'journey-running' : '')}
-      aria-label="Illustration of requests sent to the private demo API, then measured and investigated">
+      aria-label="Illustration of the included sample testing workflow; customer application testing is configured separately">
       <div className="journey-top">
-        <span className="journey-kicker"><span className="journey-indicator"/> SYSTEM UNDER TEST</span>
+        <span className="journey-kicker"><span className="journey-indicator"/> SAMPLE TEST FLOW</span>
         <span className="journey-safe"><SymbolIcon kind="shield"/> LOCAL · AUTHORIZED</span>
       </div>
       <div className="journey-canvas">
@@ -125,7 +125,7 @@ function SystemJourney({
         </div>
         <div className="journey-node journey-node-target">
           <div className="journey-symbol journey-server"><SymbolIcon kind="cpu"/></div>
-          <strong>Sample API</strong>
+          <strong>Example API</strong>
           <small>demo-api</small>
           <span className="journey-target-caption">SAFE TEST TARGET</span>
         </div>
@@ -244,9 +244,9 @@ function LocalApplicationPanel({ connected, accessKey, aiConfigured }: {
     <section className="panel app-test-panel" id="my-application" aria-label="Test your own local application">
       <div className="app-product-head">
         <div>
-          <p className="overline"><SymbolIcon kind="cpu"/> REAL HTTP APPLICATION TESTING</p>
-          <h2>Test your own API. Not just our demo.</h2>
-          <p>Run actual HTTP GET requests against an application <strong>you control</strong> inside this Codespace or computer. Compare two matched runs before and after a change.</p>
+          <p className="overline"><SymbolIcon kind="cpu"/> APPLICATION PERFORMANCE TESTING</p>
+          <h2>Test your API</h2>
+          <p>Connect an API you own or are authorized to test, measure its HTTP performance, and compare the results before and after a change. This first release supports a locally running API configured by the backend owner.</p>
         </div>
         <span className={'app-ready-badge ' + (ready ? 'app-ready-online' : '')}>
           <span className="tiny-success"/>{ready ? 'LOCAL APP READY' : 'OWNER SETUP REQUIRED'}
@@ -692,13 +692,13 @@ export default function HomePage() {
         <div className="side-label">WORKSPACE</div>
         <nav className="side-nav" aria-label="Dashboard navigation">
           <a className="nav-active" href="#overview"><SymbolIcon kind="grid"/> Overview</a>
-          <a href="#my-application"><SymbolIcon kind="cpu"/> My Application</a>
+          <a href="#my-application"><SymbolIcon kind="cpu"/> Test Your API</a>
           <a href="#experiments"><SymbolIcon kind="pulse"/> Experiments</a>
           <a href="#analysis"><SymbolIcon kind="spark"/> AI Investigator</a>
           <a href="#history"><SymbolIcon kind="chart"/> Run History</a>
         </nav>
         <div className="sidebar-bottom">
-          <div className="sidebar-info"><span className="sidebar-info-icon"><SymbolIcon kind="shield"/></span><strong>Controlled by design</strong><p>Isolated demo target · bounded execution · no arbitrary URLs</p></div>
+          <div className="sidebar-info"><span className="sidebar-info-icon"><SymbolIcon kind="shield"/></span><strong>Controlled by design</strong><p>Owner-authorized API targets · bounded read-only tests</p></div>
           <p className="sidebar-credit">META GLOBAL AI HACKATHON · 2026<br/>Indie Developer Track</p>
         </div>
       </aside>
@@ -722,7 +722,7 @@ export default function HomePage() {
               </div>
               <div className="hero-actions">
                 <a className="button primary hero-primary-action" href="#quickstart">
-                  Choose a demo scenario <SymbolIcon kind="arrow"/>
+                  Explore sample investigations <SymbolIcon kind="arrow"/>
                 </a>
                 <a className="hero-how-link" href="#how-it-works">See how it works</a>
               </div>
@@ -734,12 +734,12 @@ export default function HomePage() {
           {!connected && (
             <section className="connect-panel" id="connect-workspace" aria-label="Connect to private LoadPilot API">
               <div className="connect-icon"><SymbolIcon kind="lock"/></div>
-              <div className="connect-copy"><strong>Connect to your local demo</strong><p>Enter the separate DASHBOARD_ACCESS_TOKEN from apps/web/.env.local. This is not your Meta API key. The key stays in this tab&apos;s memory.</p><details className="connect-help"><summary>Where do I find the access key?</summary><p>In Codespaces, open apps/web/.env.local privately and use the value of DASHBOARD_ACCESS_TOKEN. Also start Fastify on port 4000. Never share or commit either token.</p></details></div>
+              <div className="connect-copy"><strong>Connect your workspace</strong><p>Enter the separate DASHBOARD_ACCESS_TOKEN from apps/web/.env.local. This is not your Meta API key. The key stays in this tab&apos;s memory.</p><details className="connect-help"><summary>Where do I find the access key?</summary><p>In Codespaces, open apps/web/.env.local privately and use the value of DASHBOARD_ACCESS_TOKEN. Also start Fastify on port 4000. Never share or commit either token.</p></details></div>
               <div className="connect-actions"><input type="password" aria-label="Dashboard access key" autoComplete="off" value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Dashboard access key" onKeyDown={(event) => { if (event.key === 'Enter' && !busy) void connect(); }}/><button type="button" className="button primary" onClick={() => void connect()} disabled={Boolean(busy) || !accessKey}>Connect <SymbolIcon kind="arrow"/></button></div>
             </section>
           )}
           {connected && (
-            <div className="connected-banner"><span><span className="tiny-success"/> Private API verified · <strong>demo-api</strong> allowlisted · {aiConfigured ? 'Meta AI ready' : 'Meta AI not configured'}</span><button className="text-button" onClick={() => { setConnected(false); setAiConfigured(false); setAccessKey(''); clearResults(); setHistory([]); }} type="button" disabled={Boolean(busy)}>Lock workspace</button></div>
+            <div className="connected-banner"><span><span className="tiny-success"/> Private backend verified · Authorized testing only · {aiConfigured ? 'Meta AI ready' : 'Meta AI not configured'}</span><button className="text-button" onClick={() => { setConnected(false); setAiConfigured(false); setAccessKey(''); clearResults(); setHistory([]); }} type="button" disabled={Boolean(busy)}>Lock workspace</button></div>
           )}
 
           {error && <div className="alert" role="alert"><strong>Action needs attention</strong><span>{error}</span><button type="button" onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
@@ -751,11 +751,11 @@ export default function HomePage() {
           <section className="scenario-start" id="quickstart">
             <div className="scenario-heading">
               <div>
-                <p className="section-kicker">START HERE · YOUR FIRST INVESTIGATION</p>
-                <h2>Pick a problem. See how LoadPilot solves it.</h2>
-                <p>Each scenario uses our private sample API—not a live customer's website. Choosing one only changes your test settings; it doesn't start a test or spend AI credits.</p>
+                <p className="section-kicker">OPTIONAL · LEARN THE WORKFLOW</p>
+                <h2>Try a sample investigation</h2>
+                <p>New to LoadPilot? Use an included sample endpoint to understand the investigation workflow. To measure your own application instead, use <a href="#my-application" className="hero-how-link">Test your API</a> above. Selecting a sample does not execute traffic or use AI credits.</p>
               </div>
-              <span className="scenario-mode"><SymbolIcon kind="shield"/> BOUNDED DEMO</span>
+              <span className="scenario-mode"><SymbolIcon kind="shield"/> OPTIONAL SAMPLE</span>
             </div>
             <div className="scenario-cards">
               <button type="button" className={'scenario-card ' + (plan.concurrency === 4 && plan.requestsPerSecond === 20 ? 'scenario-selected' : '')}
@@ -782,7 +782,7 @@ export default function HomePage() {
             <div className="scenario-next" role="status">
               <div className="scenario-next-symbol"><SymbolIcon kind={connected ? 'check' : 'lock'}/></div>
               <div>
-                <strong>{connected ? 'Ready to run your experiment' : 'Connect the demo backend to begin'}</strong>
+                <strong>{connected ? 'Ready to run your experiment' : 'Connect your workspace to begin'}</strong>
                 <p>{connected
                   ? 'Your chosen settings are ready. Start the bounded test, then inspect the real measurements.'
                   : 'The scenario can be selected now. To run it, enter the dashboard access key in the connection panel above.'}</p>
@@ -795,7 +795,7 @@ export default function HomePage() {
           <section className="how-it-works" id="how-it-works" aria-label="How LoadPilot works">
             <div className="how-heading"><p className="section-kicker">THE METHOD</p><h2>From suspicion to evidence in four steps.</h2></div>
             <div className="how-grid">
-              <div><span className="how-index">01 / ASK</span><div className="how-icon"><SymbolIcon kind="cpu"/></div><strong>Pick a slowdown</strong><p>Choose the demo scenario and safe test settings.</p></div>
+              <div><span className="how-index">01 / ASK</span><div className="how-icon"><SymbolIcon kind="cpu"/></div><strong>Select an API</strong><p>Configure your authorized local API or select a sample scenario.</p></div>
               <div><span className="how-index">02 / MEASURE</span><div className="how-icon"><SymbolIcon kind="pulse"/></div><strong>Put it under load</strong><p>Run real bounded requests and collect latency.</p></div>
               <div><span className="how-index">03 / COMPARE</span><div className="how-icon"><SymbolIcon kind="chart"/></div><strong>Spot the bottleneck</strong><p>Compare variants, error rates and p95 response time.</p></div>
               <div><span className="how-index">04 / INVESTIGATE</span><div className="how-icon"><SymbolIcon kind="spark"/></div><strong>Ask Muse what's next</strong><p>Get an evidence-citing hypothesis and approve a retest.</p></div>
@@ -842,7 +842,7 @@ export default function HomePage() {
                   <p className="muted-note">Both variants also differ in simulated processing time. This comparison alone does not establish causality.</p>
                 </>
               ) : (
-                <div className="empty-results"><div className="empty-icon"><SymbolIcon kind="pulse"/></div><h4>Your evidence will appear here</h4><p>Choose a sample scenario, connect your backend, and run the first two experiments. We never substitute example numbers for real results.</p><div className="empty-pills"><span>p50 · p95 · p99</span><span>REQUEST RATE</span><span>ERRORS</span></div></div>
+                <div className="empty-results"><div className="empty-icon"><SymbolIcon kind="pulse"/></div><h4>Your evidence will appear here</h4><p>Connect your workspace and run a sample investigation to populate this comparison. The separate Test your API panel measures your own authorized endpoint.</p><div className="empty-pills"><span>p50 · p95 · p99</span><span>REQUEST RATE</span><span>ERRORS</span></div></div>
               )}
             </section>
           </div>
