@@ -67,4 +67,4 @@ Runs six local bounded experiments, writes a JSON report under the ignored `apps
 
 ## Next
 
-Capture a three-minute walkthrough with one paid Muse Spark plan/diagnosis, an actual measured comparison, and the integrity-checkable repeated-trial report. Additional work for real-world measurements would require an authorized network runner, proper control conditions, durable storage, user identity and security reviews.
+Capture a three-minute walkthrough with one paid Muse Spark plan/diagnosis, an actual measured comparison, and the integrity-checkable repeated-trial report. A separate owner-consented **loopback HTTP GET runner is now implemented** (see [LOCAL_APP_TESTING.md](LOCAL_APP_TESTING.md)); future **remote staging/production** testing would still require stronger ownership verification, proper control conditions, durable storage, identity, SSRF protections and security review.

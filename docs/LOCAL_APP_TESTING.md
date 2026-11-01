@@ -56,7 +56,9 @@ Previously LoadPilot only benchmarked its bundled in-process Fastify demo. The n
 
 7. Back in the dashboard click **Run matched follow-up**. See two genuine HTTP latency/throughput measurements and an honest descriptive difference. The frontend shows the same fixed test configuration for both.
 
-8. Optionally click **Ask Muse to explain the measured change**. This uses a real, paid Meta API request and independently validates the model's numeric claim and citations. The model only receives numerical measurements and fixed context, not shop responses, URL, payloads, tokens, or code.
+8. Click **Download HTTP evidence JSON** to save the actual baseline run, matched follow-up, deterministic comparison and limitations. It is an **unsigned, unhashed snapshot**, distinct from the separate checksum-bearing synthetic repeat-trial export. Re-export after model interpretation to include that optional observation.
+
+9. Optionally click **Ask Muse to explain the measured change**. This uses a real, paid Meta API request and independently validates the model's numeric claim and citations. The model only receives numerical measurements and fixed context, not shop responses, URL, payloads, tokens, or code.
 
 ## Connect a different application
 

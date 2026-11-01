@@ -27,7 +27,9 @@
 ## C. Record truthful evidence
 
 - [ ] Generate a real Meta Muse Spark test-plan proposal at least once in the project (optional for each rehearsal; each live request consumes credits).
-- [ ] Run the slow and optimized **bundled** demo targets, preserving real p95, throughput, errors and timestamps.
+- [ ] **First demo the real owner-authorized HTTP API:** run the Shop API uncached, capture a baseline, inspect it, manually restart shop cached, and capture the matched follow-up.
+- [ ] Verify both HTTP runs used identical parameters, inspect the real p95/throughput/error measurements, and click **Download HTTP evidence JSON**. Check that no credentials are present; this is an unsigned snapshot.
+- [ ] Keep the bundled in-process slow/optimized experiment as a secondary technical demonstration.
 - [ ] Call the Meta diagnostic endpoint against completed runs; check that it returns evidence citations and caveats.
 - [ ] Explicitly execute two confirmation pairs (three pairs total), and export the SHA-256 report.
 - [ ] Verify the report checksum as described in [REPEATABILITY.md](REPEATABILITY.md). Do not call the checksum an authenticated signature.
@@ -42,7 +44,7 @@
 - [ ] Keep narration consistent with actual metrics visible on screen; do not invent exact results.
 - [ ] Clearly label shortened waiting, earlier captured real runs, or other edits.
 - [ ] Name Meta Muse Spark and show what it contributes at runtime (planning and evidence-citing diagnosis).
-- [ ] Show at least one user-authorized load test and a measured comparison.
+- [ ] Lead with the real local HTTP baseline → manual investigation/change → matched follow-up, downloadable evidence, and explicit “AI cannot execute tests” panel.
 - [ ] Include safety/limitation disclosures. Avoid implying public network testing or production readiness.
 - [ ] Show a real repeatability assessment and export if the video duration permits; otherwise explain in the project description with genuine supporting evidence.
 - [ ] Render a video **no longer than 3 minutes**; rewatch to check clarity, audio and readable UI.
