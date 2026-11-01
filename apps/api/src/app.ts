@@ -139,7 +139,7 @@ export function buildApp(options: AppOptions = {}) {
     if (!parsed.success) {
       return reply.code(400).send({ error: 'Invalid experiment', issues: parsed.error.flatten() });
     }
-    if (experiments.active) {
+    if (experiments.active || applicationService.active) {
       return reply.code(409).send({ error: 'An experiment is already running' });
     }
     try {
