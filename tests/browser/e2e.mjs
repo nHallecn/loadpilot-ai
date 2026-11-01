@@ -110,7 +110,7 @@ async function flow() {
   page.on('console', msg => { if (msg.type() === 'error') browserDiagnostics.push('console ' + msg.text()); });
   page.on('requestfailed', req => browserDiagnostics.push('request-failed ' + req.url() + ' ' + (req.failure()?.errorText ?? 'unknown')));
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await checkVisible(page.getByRole('heading', { name: /Understand your/ }), 'Dashboard page loaded');
+  await checkVisible(page.getByRole('heading', { name: /Find the slowdown/ }), 'Dashboard page loaded');
 
   await enterAccessKey('wrong-private-test-secret');
   await button(/^Connect/).click();
