@@ -88,6 +88,74 @@ function LatencyChart({ before, after }: { before: ExperimentRun; after: Experim
   );
 }
 
+
+/** A schematic of the same private target the experiment runner actually measures.
+ * No synthetic charts or invented p95 numbers are rendered while idle.
+ */
+function SystemJourney({
+  plan, before, after, busy,
+}: {
+  plan: TestPlan;
+  before: ExperimentRun | null;
+  after: ExperimentRun | null;
+  busy: Busy;
+}) {
+  const running = busy === 'running-slow' || busy === 'running-optimized' ||
+    busy === 'isolating' || busy === 'retesting' || busy === 'confirming';
+  const observed = Boolean(before && after && before.status === 'completed' && after.status === 'completed');
+  return (
+    <div className={'journey-visual ' + (running ? 'journey-running' : '')}
+      aria-label="Illustration of requests sent to the private demo API, then measured and investigated">
+      <div className="journey-top">
+        <span className="journey-kicker"><span className="journey-indicator"/> SYSTEM UNDER TEST</span>
+        <span className="journey-safe"><SymbolIcon kind="shield"/> LOCAL · AUTHORIZED</span>
+      </div>
+      <div className="journey-canvas">
+        <div className="journey-node">
+          <div className="journey-symbol journey-traffic"><SymbolIcon kind="pulse"/></div>
+          <strong>Traffic</strong>
+          <small>{plan.requestsPerSecond} req/s · {plan.concurrency} workers</small>
+        </div>
+        <div className="journey-link" aria-hidden="true">
+          <span className="journey-packet journey-packet-one"/>
+          <span className="journey-packet journey-packet-two"/>
+          <span className="journey-packet journey-packet-three"/>
+        </div>
+        <div className="journey-node journey-node-target">
+          <div className="journey-symbol journey-server"><SymbolIcon kind="cpu"/></div>
+          <strong>Sample API</strong>
+          <small>demo-api</small>
+          <span className="journey-target-caption">SAFE TEST TARGET</span>
+        </div>
+        <div className="journey-link journey-link-out" aria-hidden="true">
+          <span className="journey-packet journey-packet-one"/>
+          <span className="journey-packet journey-packet-two"/>
+        </div>
+        <div className="journey-node">
+          <div className="journey-symbol journey-evidence"><SymbolIcon kind="chart"/></div>
+          <strong>Evidence</strong>
+          <small>p95 · throughput · errors</small>
+        </div>
+      </div>
+      <div className="journey-meter">
+        {observed && before && after ? (
+          <>
+            <div className="journey-meter-head"><span>Measured in this session</span><span>p95 latency · lower is better</span></div>
+            <div className="journey-meter-row"><span className="journey-slow-dot"/> Slow <strong>{formatNumber(before.metrics.latencyMs.p95)} ms</strong></div>
+            <div className="journey-meter-row"><span className="journey-fast-dot"/> Optimized <strong>{formatNumber(after.metrics.latencyMs.p95)} ms</strong></div>
+          </>
+        ) : (
+          <>
+            <div className="journey-meter-head"><span>{running ? 'MEASURING REQUESTS…' : 'HOW THE INVESTIGATION WORKS'}</span><span>NO PRE-FILLED DATA</span></div>
+            <p>Send bounded requests, record genuine timings, then ask Meta Muse Spark to interpret the evidence.</p>
+          </>
+        )}
+      </div>
+      <div className="journey-footer"><SymbolIcon kind="spark"/> <span>Muse Spark explains evidence. It never controls traffic.</span></div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [accessKey, setAccessKey] = useState('');
   const [connected, setConnected] = useState(false);
@@ -140,6 +208,29 @@ export default function HomePage() {
     } finally {
       setBusy(null);
     }
+  }
+
+
+  function selectScenario(kind: 'latency' | 'queue') {
+    if (busy) return;
+    setPlan({
+      scenario: 'baseline',
+      concurrency: kind === 'queue' ? 1 : 4,
+      durationSeconds: 5,
+      requestsPerSecond: kind === 'queue' ? 5 : 20,
+      metricFocus: 'latency',
+      hypothesis: kind === 'queue'
+        ? 'Test whether serialization is visible at low traffic before probing higher load.'
+        : 'Compare tail latency when a bundled sample API processes requests serially versus with shorter concurrent work.',
+    });
+    setObjective(kind === 'queue'
+      ? 'At light traffic the API seems healthy. Can a controlled increase in load expose a hidden queue?'
+      : 'Why does our sample API slow under load, and what improvement do the measurements support?');
+    setPlanSource('manual');
+    clearResults();
+    setNotice(kind === 'queue'
+      ? 'Hidden queue scenario selected. Run isolated factors, then ask Muse for a controlled follow-up.'
+      : 'Latency gap scenario selected. Run both experiments to collect a real before-and-after comparison.');
   }
 
   async function generatePlan() {
@@ -418,15 +509,31 @@ export default function HomePage() {
         </header>
 
         <main id="overview" className="dashboard">
-          <div className="headline">
-            <div><p className="eyebrow">AI-POWERED PERFORMANCE ENGINEERING <span className="eyebrow-line"/></p><h1>Understand your<br/><span>system under pressure.</span></h1><p className="headline-desc">Plan safe experiments, measure what matters, and let AI turn real performance evidence into actionable hypotheses.</p></div>
-            <div className="model-pill"><span className="model-spark">✦</span><div><strong>Muse Spark 1.3</strong><small>META MODEL API</small></div><span className={'pill-dot ' + (aiConfigured ? 'online' : '')}/></div>
-          </div>
+          <section className="product-hero" aria-label="Introduction to LoadPilot AI">
+            <div className="product-hero-copy">
+              <p className="eyebrow"><span className="hero-accent-star">✦</span> THE AI PERFORMANCE INVESTIGATION STUDIO</p>
+              <h1>Find the slowdown.<br/><span>Test what fixes it.</span></h1>
+              <p className="headline-desc">Your API gets slow under pressure. LoadPilot runs safe experiments, reveals the numbers behind the slowdown, then uses Meta Muse Spark to suggest what to test next.</p>
+              <div className="hero-benefits">
+                <span><SymbolIcon kind="pulse"/> Simulate load</span>
+                <span><SymbolIcon kind="chart"/> Measure the gap</span>
+                <span><SymbolIcon kind="spark"/> Investigate with AI</span>
+              </div>
+              <div className="hero-actions">
+                <a className="button primary hero-primary-action" href="#quickstart">
+                  Choose a demo scenario <SymbolIcon kind="arrow"/>
+                </a>
+                <a className="hero-how-link" href="#how-it-works">See how it works</a>
+              </div>
+              <div className="hero-model"><span className={'pill-dot ' + (aiConfigured ? 'online' : '')}/> Powered by Meta Muse Spark 1.3 <span>·</span> No external traffic</div>
+            </div>
+            <SystemJourney plan={plan} before={before} after={after} busy={busy}/>
+          </section>
 
           {!connected && (
-            <section className="connect-panel" aria-label="Connect to private LoadPilot API">
+            <section className="connect-panel" id="connect-workspace" aria-label="Connect to private LoadPilot API">
               <div className="connect-icon"><SymbolIcon kind="lock"/></div>
-              <div className="connect-copy"><strong>Unlock your private workspace</strong><p>Enter the dashboard access key configured on the Next.js server. The key stays in this tab&apos;s memory and is not saved in browser storage.</p></div>
+              <div className="connect-copy"><strong>Connect to your local demo</strong><p>Enter the separate DASHBOARD_ACCESS_TOKEN from apps/web/.env.local. This is not your Meta API key. The key stays in this tab&apos;s memory.</p><details className="connect-help"><summary>Where do I find the access key?</summary><p>In Codespaces, open apps/web/.env.local privately and use the value of DASHBOARD_ACCESS_TOKEN. Also start Fastify on port 4000. Never share or commit either token.</p></details></div>
               <div className="connect-actions"><input type="password" aria-label="Dashboard access key" autoComplete="off" value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Dashboard access key" onKeyDown={(event) => { if (event.key === 'Enter' && !busy) void connect(); }}/><button type="button" className="button primary" onClick={() => void connect()} disabled={Boolean(busy) || !accessKey}>Connect <SymbolIcon kind="arrow"/></button></div>
             </section>
           )}
@@ -437,7 +544,62 @@ export default function HomePage() {
           {error && <div className="alert" role="alert"><strong>Action needs attention</strong><span>{error}</span><button type="button" onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
           <div className="notice"><span className="live-ring"/><span role="status">{notice}</span></div>
 
-          <div className="section-top"><div><p className="section-kicker">THE INVESTIGATION</p><h2>One workflow. Full visibility.</h2></div><span className="mode-chip"><SymbolIcon kind="shield"/> LOCAL DEMO MODE</span></div>
+
+          <section className="scenario-start" id="quickstart">
+            <div className="scenario-heading">
+              <div>
+                <p className="section-kicker">START HERE · YOUR FIRST INVESTIGATION</p>
+                <h2>Pick a problem. See how LoadPilot solves it.</h2>
+                <p>Each scenario uses our private sample API—not a live customer's website. Choosing one only changes your test settings; it doesn't start a test or spend AI credits.</p>
+              </div>
+              <span className="scenario-mode"><SymbolIcon kind="shield"/> BOUNDED DEMO</span>
+            </div>
+            <div className="scenario-cards">
+              <button type="button" className={'scenario-card ' + (plan.concurrency === 4 && plan.requestsPerSecond === 20 ? 'scenario-selected' : '')}
+                aria-pressed={plan.concurrency === 4 && plan.requestsPerSecond === 20}
+                onClick={() => selectScenario('latency')} disabled={Boolean(busy)}>
+                <span className="scenario-number">01 <span>POPULAR START</span></span>
+                <span className="scenario-icon scenario-icon-latency"><SymbolIcon kind="chart"/></span>
+                <strong>Why is my API slow?</strong>
+                <span className="scenario-story">Compare a slow and optimized service under controlled traffic. See the latency difference.</span>
+                <span className="scenario-meta">4 workers <i/> 20 req/s <i/> 5 sec</span>
+                <span className="scenario-cta">Select latency investigation <SymbolIcon kind="arrow"/></span>
+              </button>
+              <button type="button" className={'scenario-card ' + (plan.concurrency === 1 && plan.requestsPerSecond === 5 ? 'scenario-selected' : '')}
+                aria-pressed={plan.concurrency === 1 && plan.requestsPerSecond === 5}
+                onClick={() => selectScenario('queue')} disabled={Boolean(busy)}>
+                <span className="scenario-number">02 <span>AI DEEP DIVE</span></span>
+                <span className="scenario-icon scenario-icon-queue"><SymbolIcon kind="cpu"/></span>
+                <strong>What bottleneck is hiding?</strong>
+                <span className="scenario-story">Start with light traffic. Isolate queueing from work delay, then let Muse suggest a more revealing test.</span>
+                <span className="scenario-meta">1 worker <i/> 5 req/s <i/> 5 sec</span>
+                <span className="scenario-cta">Select hidden-queue investigation <SymbolIcon kind="arrow"/></span>
+              </button>
+            </div>
+            <div className="scenario-next" role="status">
+              <div className="scenario-next-symbol"><SymbolIcon kind={connected ? 'check' : 'lock'}/></div>
+              <div>
+                <strong>{connected ? 'Ready to run your experiment' : 'Connect the demo backend to begin'}</strong>
+                <p>{connected
+                  ? 'Your chosen settings are ready. Start the bounded test, then inspect the real measurements.'
+                  : 'The scenario can be selected now. To run it, enter the dashboard access key in the connection panel above.'}</p>
+              </div>
+              <a href={connected ? (plan.concurrency === 1 && plan.requestsPerSecond === 5 ? '#controlled' : '#experiments') : '#connect-workspace'}
+                className="scenario-next-link">{connected ? 'Go to experiment' : 'Go to connection'} <SymbolIcon kind="arrow"/></a>
+            </div>
+          </section>
+
+          <section className="how-it-works" id="how-it-works" aria-label="How LoadPilot works">
+            <div className="how-heading"><p className="section-kicker">THE METHOD</p><h2>From suspicion to evidence in four steps.</h2></div>
+            <div className="how-grid">
+              <div><span className="how-index">01 / ASK</span><div className="how-icon"><SymbolIcon kind="cpu"/></div><strong>Pick a slowdown</strong><p>Choose the demo scenario and safe test settings.</p></div>
+              <div><span className="how-index">02 / MEASURE</span><div className="how-icon"><SymbolIcon kind="pulse"/></div><strong>Put it under load</strong><p>Run real bounded requests and collect latency.</p></div>
+              <div><span className="how-index">03 / COMPARE</span><div className="how-icon"><SymbolIcon kind="chart"/></div><strong>Spot the bottleneck</strong><p>Compare variants, error rates and p95 response time.</p></div>
+              <div><span className="how-index">04 / INVESTIGATE</span><div className="how-icon"><SymbolIcon kind="spark"/></div><strong>Ask Muse what's next</strong><p>Get an evidence-citing hypothesis and approve a retest.</p></div>
+            </div>
+          </section>
+
+          <div className="section-top"><div><p className="section-kicker">THE INVESTIGATION</p><h2>Your live experiment workspace</h2></div><span className="mode-chip"><SymbolIcon kind="shield"/> IN-PROCESS SAMPLE · NO PUBLIC TRAFFIC</span></div>
 
           <div className="stepper" aria-label="Workflow progress">
             {[{name:'Plan',sub:'Define a safe test'}, {name:'Execute',sub:'Collect real metrics'}, {name:'Compare',sub:'Measure the difference'}, {name:'Diagnose',sub:'Evidence-based insights'}].map((step,i)=><div className={'step '+(progress>i?'step-complete':(progress===i?'step-current':''))} key={step.name}><span className="step-number">{progress>i?'✓':String(i+1).padStart(2,'0')}</span><span><strong>{step.name}</strong><small>{step.sub}</small></span></div>)}
@@ -445,7 +607,7 @@ export default function HomePage() {
 
           <div className="main-grid" id="experiments">
             <section className="panel experiment-panel">
-              <div className="panel-header"><div><div className="overline"><SymbolIcon kind="cpu"/> EXPERIMENT CONTROL</div><h3>Design your test</h3><p>Only the bundled, isolated demonstration API can be tested.</p></div><span className="status-chip">TARGET LOCKED</span></div>
+              <div className="panel-header"><div><div className="overline"><SymbolIcon kind="cpu"/> STEP 1 · CONFIGURE</div><h3>Run your chosen scenario</h3><p>Adjust safe test settings, then launch a controlled experiment against the bundled sample API.</p></div><span className="status-chip">TARGET LOCKED</span></div>
               <label htmlFor="objective" className="field-label">PERFORMANCE QUESTION</label>
               <textarea id="objective" className="objective" rows={3} maxLength={600} value={objective} disabled={!connected || Boolean(busy)} onChange={(event)=>setObjective(event.target.value)} placeholder="What should LoadPilot investigate?"/>
               <button type="button" className="button ai-button" disabled={!connected || !aiConfigured || Boolean(busy) || objective.trim().length < 10} onClick={()=>void generatePlan()}>{busy==='planning'?<span className="spinner"/>:<SymbolIcon kind="spark"/>} {busy==='planning'?'Generating a bounded plan…':'Generate plan with Muse Spark'} <span className="button-hint">USES MODEL API</span></button>
@@ -464,7 +626,7 @@ export default function HomePage() {
             </section>
 
             <section className="panel results-panel">
-              <div className="panel-header"><div><div className="overline"><SymbolIcon kind="chart"/> LIVE RESULTS</div><h3>Performance comparison</h3><p>Computed directly from completed local test runs.</p></div><span className={'result-state '+(comparison?'result-ready':'')}>{comparison?'MEASURED':'AWAITING DATA'}</span></div>
+              <div className="panel-header"><div><div className="overline"><SymbolIcon kind="chart"/> STEP 2 · OBSERVE</div><h3>See what changed</h3><p>Actual p95 latency, throughput and errors from completed local runs—never demo placeholders.</p></div><span className={'result-state '+(comparison?'result-ready':'')}>{comparison?'MEASURED':'AWAITING DATA'}</span></div>
               {before && after ? (
                 <>
                   <div className="mini-stats">
@@ -477,7 +639,7 @@ export default function HomePage() {
                   <p className="muted-note">Both variants also differ in simulated processing time. This comparison alone does not establish causality.</p>
                 </>
               ) : (
-                <div className="empty-results"><div className="empty-icon"><SymbolIcon kind="pulse"/></div><h4>No measurements yet</h4><p>Run the slow and optimized demo variants to unlock real latency charts, throughput comparison and AI diagnostics.</p><div className="empty-pills"><span>p50 · p95 · p99</span><span>REQUEST RATE</span><span>ERRORS</span></div></div>
+                <div className="empty-results"><div className="empty-icon"><SymbolIcon kind="pulse"/></div><h4>Your evidence will appear here</h4><p>Choose a sample scenario, connect your backend, and run the first two experiments. We never substitute example numbers for real results.</p><div className="empty-pills"><span>p50 · p95 · p99</span><span>REQUEST RATE</span><span>ERRORS</span></div></div>
               )}
             </section>
           </div>
