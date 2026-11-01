@@ -157,7 +157,58 @@ export type HypothesisReview = {
   limitations: string[];
 };
 
+export type LocalAppStatus = {
+  configured: boolean;
+  targetId: 'my-local-api';
+  targetName: string | null;
+  method: 'GET';
+  path: string | null;
+  limits: { maxConcurrency: number; maxRequestsPerSecond: number; maxDurationSeconds: number; maxRequestsPerRun: number };
+  note: string;
+};
+
+export type LocalAppRun = {
+  id: string;
+  targetId: 'my-local-api';
+  targetName: string;
+  recordedAt: string;
+  status: 'completed' | 'cancelled';
+  plan: TestPlan;
+  executionMode: 'authorized_loopback_http_get';
+  metrics: Metrics;
+};
+
+export type LocalAppComparison = {
+  beforeRunId: string;
+  afterRunId: string;
+  beforeP95Ms: number;
+  afterP95Ms: number;
+  p95DeltaMs: number;
+  p95ReductionPercent: number | null;
+  beforeRps: number;
+  afterRps: number;
+  beforeErrorRatePercent: number;
+  afterErrorRatePercent: number;
+  conclusion: 'descriptive_observation_only';
+  note: string;
+};
+
+export type LocalAppFinding = {
+  status: 'evidence_checked_app_observation';
+  model: string;
+  finding: {
+    finding: 'regression_observed' | 'improvement_observed' | 'no_clear_change' | 'inconclusive_errors';
+    evidenceIds: string[];
+    explanation: string;
+    nextStep: string;
+  };
+  citedEvidence: Array<{ id: string; value: number; unit: string }>;
+  limitations: string[];
+  cached: boolean;
+};
+
 export type DashboardAction =
+  | 'appStatus' | 'appRun' | 'appHistory' | 'appCompare' | 'appDiagnose' | 'appCancel'
   | 'health' | 'status' | 'plan' | 'run' | 'history' | 'compare' | 'diagnose' | 'cancel' | 'adjudicate' | 'controlled' | 'hypothesize' | 'reassess';
 
 export const defaultPlan: TestPlan = {

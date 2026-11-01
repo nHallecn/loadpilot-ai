@@ -17,6 +17,13 @@ const operations = {
   reassess: { method: 'POST', path: '/ai/reassess' },
   diagnose: { method: 'POST', path: '/ai/diagnose' },
   cancel: { method: 'DELETE', path: '/experiments/active' },
+  appStatus: { method: 'GET', path: '/applications/status' },
+  appRun: { method: 'POST', path: '/applications/run' },
+  appHistory: { method: 'GET', path: '/applications/runs' },
+  appCompare: { method: 'POST', path: '/applications/compare' },
+  appDiagnose: { method: 'POST', path: '/ai/app-diagnose' },
+  appCancel: { method: 'DELETE', path: '/applications/active' },
+
 } as const;
 
 function matchesSecret(received: string | null, expected: string): boolean {
