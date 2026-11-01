@@ -404,6 +404,7 @@ export default function HomePage() {
   const [accessKey, setAccessKey] = useState('');
   const [connected, setConnected] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
+  const [activeSection, setActiveSection] = useState('overview');
   const [journeyPath, setJourneyPath] = useState<JourneyPath>('local');
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState('');
@@ -424,6 +425,21 @@ export default function HomePage() {
   const [hypothesisSession, setHypothesisSession] = useState<HypothesisSession | null>(null);
   const [followUpRuns, setFollowUpRuns] = useState<ExperimentRun[]>([]);
   const [hypothesisReview, setHypothesisReview] = useState<HypothesisReview | null>(null);
+
+  useEffect(() => {
+    const sectionIds = ['overview', 'my-application', 'experiments', 'analysis', 'history'];
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => Boolean(section));
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible?.target.id) setActiveSection(visible.target.id);
+    }, { rootMargin: '-16% 0px -66% 0px', threshold: [0.05, 0.2, 0.5] });
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
 
   const clearResults = () => {
     setBefore(null); setAfter(null); setComparison(null); setDiagnosis(null);
@@ -755,13 +771,13 @@ export default function HomePage() {
     <div className="shell">
       <div className="content">
         <header className="topbar">
-          <a className="brand" href="#overview" aria-label="LoadPilot overview"><div className="brand-mark"><SymbolIcon kind="pulse"/></div><div><strong>loadpilot<span>.ai</span></strong><small>PERFORMANCE INTELLIGENCE</small></div></a>
+          {/* Brand SVG lives in public/loadpilot-logo.svg; use this mark for the supplied LoadPilot identity. */}
+          <a className="brand" href="#overview" aria-label="LoadPilot overview" onClick={() => setActiveSection('overview')}><Image className="brand-logo" src="/loadpilot-logo.svg" alt="" width={48} height={48} priority /><div><strong>LoadPilot <span className="brand-ai">AI</span></strong><small>PERFORMANCE INTELLIGENCE</small></div></a>
           <nav className="top-nav" aria-label="Workspace navigation">
-            <a className="top-nav-active" href="#overview">Overview</a>
-            <a href="#my-application">Test API</a>
-            <a href="#experiments">Measure</a>
-            <a href="#analysis">Investigate</a>
-            <a href="#history">History</a>
+            {[
+              ['overview', 'Overview'], ['my-application', 'Test API'], ['experiments', 'Measure'],
+              ['analysis', 'Investigate'], ['history', 'History'],
+            ].map(([id, label]) => <a key={id} className={activeSection === id ? 'top-nav-active' : ''} href={'#' + id} onClick={() => setActiveSection(id)}>{label}</a>)}
           </nav>
           <div className="topbar-right"><span className={'connection-dot ' + (connected ? 'online' : '')}/><span>{connected ? 'CONNECTED' : 'READY TO CONNECT'}</span><span className="topbar-divider"/><span className="user-avatar">LP</span></div>
         </header>
