@@ -35,6 +35,7 @@ docs/
   DIAGNOSTICS.md    Evidence-citing Meta AI diagnosis and independent verification
   DASHBOARD.md      Codespaces setup, app workflow and security boundaries
   GUIDED_UI.md      Visual demo introduction, scenario presets and manual testing
+  LOCAL_APP_TESTING.md  Owner-controlled real HTTP application tests and safeguards
   REPEATABILITY.md Repeat trials, transparent thresholds and evidence export
   CONTROLLED_INVESTIGATION.md  Isolation of serialization vs processing delay
   AI_HYPOTHESES.md            Muse-guided follow-ups and evidence verification
@@ -43,6 +44,12 @@ docs/
   FINAL_CHECKLIST.md Local preflight, evidence and portal steps
 HACKATHON_CONTRIBUTIONS.md  Evidence log and third-party disclosure
 ```
+
+## Test a real application over HTTP
+
+**New:** LoadPilot can test a real owner-controlled API over localhost HTTP, not only its in-process synthetic demo. Configure one exact **GET** endpoint in the backend's private environment, provide explicit ownership consent, and measure two genuine HTTP runs before and after a software change. The dashboard exposes actual p95, throughput, error rate, a matched comparison, and optional evidence-checked Meta analysis. No user-supplied Internet URLs, custom headers or POST traffic are accepted. See [Local App Testing](docs/LOCAL_APP_TESTING.md).
+
+Fastest demonstration: `node apps/api/scripts/sample-owned-app.mjs` starts a separate shop HTTP service on `127.0.0.1:4100`, then follow [the configuration and comparison steps](docs/LOCAL_APP_TESTING.md). This is local authorized testing, **not remote production load testing**.
 
 ## Local development
 
