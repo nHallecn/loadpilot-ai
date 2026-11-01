@@ -4,10 +4,18 @@
 
 # LoadPilot AI
 
-**Autonomous Software Performance Investigator**  
+**AI that investigates why your API is slow — using measured evidence, not guesses.**  
 Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
-> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis, an interactive Next.js dashboard, descriptive repeat-trial adjudication with checksum evidence exports, **one-factor controlled bottleneck contrasts**, and a model-guided, explicitly authorized follow-up investigation (on a feature branch pending review). History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
+> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis, an interactive Next.js dashboard with real local HTTP testing and JSON evidence downloads, descriptive repeat-trial adjudication with checksum evidence exports, **one-factor controlled bottleneck contrasts**, and a model-guided, explicitly authorized follow-up investigation (on a feature branch pending review). History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
+
+## Judge demo: real local HTTP, not just a synthetic benchmark
+
+**Before → Investigation → Verified follow-up.** Start a separate Shop API locally, configure the fixed owner-consented GET endpoint, then use **Test your API** as the first screen. Capture the actual HTTP baseline, inspect measurements, make a deliberate change in the Shop API, and explicitly run a matched follow-up. Download the HTTP evidence JSON and optionally request an evidence-checked Muse Spark interpretation.
+
+**Safety boundary:** Muse Spark may propose plans and explain evidence, but it **cannot execute tests**, select arbitrary target URLs, run shell commands or bypass deterministic limits. The HTTP runner accepts only owner-consented loopback GET traffic (maximum 10 req/s, 4 workers, 10 seconds; no redirects or Internet targets). A before/after comparison is measured evidence, **not causal proof**.
+
+[Real HTTP setup](docs/LOCAL_APP_TESTING.md) · [Three-minute judge demo](docs/DEMO_SCRIPT.md) · [Implemented architecture](docs/ARCHITECTURE.md)
 
 ## The problem
 
@@ -33,7 +41,7 @@ apps/
 
 docs/
   MVP.md           Scope and acceptance criteria
-  ARCHITECTURE.md  Planned components and trust boundaries
+  ARCHITECTURE.md  Implemented components and trust boundaries
   META_MODEL_API.md Server-side Meta planner setup and security constraints
   EXPERIMENTS.md    Local benchmark and comparison walkthrough
   DIAGNOSTICS.md    Evidence-citing Meta AI diagnosis and independent verification
@@ -51,7 +59,7 @@ HACKATHON_CONTRIBUTIONS.md  Evidence log and third-party disclosure
 
 ## Test a real application over HTTP
 
-**New:** LoadPilot can test a real owner-controlled API over localhost HTTP, not only its in-process synthetic demo. Configure one exact **GET** endpoint in the backend's private environment, provide explicit ownership consent, and measure two genuine HTTP runs before and after a software change. The dashboard exposes actual p95, throughput, error rate, a matched comparison, and optional evidence-checked Meta analysis. No user-supplied Internet URLs, custom headers or POST traffic are accepted. See [Local App Testing](docs/LOCAL_APP_TESTING.md).
+**New:** LoadPilot can test a real owner-controlled API over localhost HTTP, not only its in-process synthetic demo. Configure one exact **GET** endpoint in the backend's private environment, provide explicit ownership consent, and measure two genuine HTTP runs before and after a software change. The dashboard exposes actual p95, throughput, error rate, a matched comparison, **Download HTTP evidence JSON**, and optional evidence-checked Meta analysis. The local HTTP export is an unsigned snapshot; the separate in-process repeat-trial export has a SHA-256 checksum, not a signature. No user-supplied Internet URLs, custom headers or POST traffic are accepted. See [Local App Testing](docs/LOCAL_APP_TESTING.md).
 
 Fastest demonstration: `node apps/api/scripts/sample-owned-app.mjs` starts a separate shop HTTP service on `127.0.0.1:4100`, then follow [the configuration and comparison steps](docs/LOCAL_APP_TESTING.md). This is local authorized testing, **not remote production load testing**.
 
@@ -82,7 +90,7 @@ pnpm dev
 
 For local setup, configure `apps/api/.env` and run the Fastify server using `node --env-file=.env --import tsx src/server.ts` from `apps/api`. Configure `apps/web/.env.local` with **server-only** `LOADPILOT_BACKEND_TOKEN` (the API demo token) and a **different** `DASHBOARD_ACCESS_TOKEN` (minimum 24 characters), then run `pnpm dev` from `apps/web`. The web dashboard only uses a same-origin Next.js gateway and keeps secrets server-side. Follow the full [dashboard setup guide](docs/DASHBOARD.md). Never commit secrets or expose the demo backend publicly.
 
-The model issues **proposals only**; a separate deterministic runner executes only the bundled in-process demo API, and never loads user-supplied URLs. Run `node --env-file=.env scripts/demo-experiments.mjs` from `apps/api` to compare slow and optimized variants; add `--with-ai` to pay for one live Meta-generated plan, `--diagnose` to pay for an evidence-checked Meta finding, and/or `--repeat` to repeat the bounded demo twice and export a JSON evidence report without additional AI calls. Use `node --env-file=.env scripts/controlled-investigation.mjs` to run the two one-factor contrasts **without model credits**, or `node --env-file=.env scripts/ai-hypothesis-demo.mjs` to request a paid AI hypothesis, review its plan and explicitly authorize a bounded follow-up before a second paid AI reassessment. See [Controlled investigation](docs/CONTROLLED_INVESTIGATION.md), [Experiment runner](docs/EXPERIMENTS.md) and [AI diagnosis](docs/DIAGNOSTICS.md). The live Meta API connection was manually validated during development; CI uses mocked Meta responses. Avoid publishing this demo backend without production-grade authentication and quotas.
+The model issues **proposals only**; deterministic runners execute either the bounded bundled in-process demo or the separately owner-consented, fixed loopback GET endpoint. Neither model nor browser can supply arbitrary Internet URLs. Run `node --env-file=.env scripts/demo-experiments.mjs` from `apps/api` to compare slow and optimized variants; add `--with-ai` to pay for one live Meta-generated plan, `--diagnose` to pay for an evidence-checked Meta finding, and/or `--repeat` to repeat the bounded demo twice and export a JSON evidence report without additional AI calls. Use `node --env-file=.env scripts/controlled-investigation.mjs` to run the two one-factor contrasts **without model credits**, or `node --env-file=.env scripts/ai-hypothesis-demo.mjs` to request a paid AI hypothesis, review its plan and explicitly authorize a bounded follow-up before a second paid AI reassessment. See [Controlled investigation](docs/CONTROLLED_INVESTIGATION.md), [Experiment runner](docs/EXPERIMENTS.md) and [AI diagnosis](docs/DIAGNOSTICS.md). The live Meta API connection was manually validated during development; CI uses mocked Meta responses. Avoid publishing this demo backend without production-grade authentication and quotas.
 
 ## Hackathon integrity
 
