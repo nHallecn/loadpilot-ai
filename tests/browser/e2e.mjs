@@ -111,9 +111,12 @@ async function flow() {
   page.on('requestfailed', req => browserDiagnostics.push('request-failed ' + req.url() + ' ' + (req.failure()?.errorText ?? 'unknown')));
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await checkVisible(page.getByRole('heading', { name: /Find the slowdown/ }), 'Dashboard page loaded');
+  await checkVisible(page.getByRole('heading', { name: 'Test your API', exact: true }), 'Customer API testing is the primary feature');
+  await checkVisible(page.locator('.hero-primary-action'), 'Primary hero action points to application testing');
+  assert.equal(await page.locator('.hero-primary-action').getAttribute('href'), '#my-application');
 
-  await checkVisible(page.getByRole('heading', { name: /Pick a problem/ }), 'Guided scenario picker visible');
-  await checkVisible(page.getByText('SYSTEM UNDER TEST'), 'Schematic of the private demo target is visible');
+  await checkVisible(page.getByRole('heading', { name: /Try a sample investigation/ }), 'Guided scenario picker visible');
+  await checkVisible(page.getByText('SAMPLE TEST FLOW'), 'Schematic of the private demo target is visible');
   await button(/Select hidden-queue investigation/).click();
   assert.equal(await page.locator('#rate').inputValue(), '5');
   assert.equal(await page.locator('#concurrency').inputValue(), '1');
