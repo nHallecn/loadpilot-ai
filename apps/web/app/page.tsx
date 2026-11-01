@@ -240,6 +240,33 @@ function LocalApplicationPanel({ connected, accessKey, aiConfigured }: {
     } finally { setAnalyzing(false); }
   }
 
+
+  function exportLocalEvidence() {
+    if (!first || !second || !comparison) return;
+    const report = {
+      schemaVersion: 'loadpilot.local-http-evidence.v1',
+      exportedAt: new Date().toISOString(),
+      source: 'actual authorized loopback HTTP measurements',
+      target: { name: first.targetName, method: 'GET', path: target?.path ?? null },
+      baseline: first, followUp: second, comparison,
+      modelInterpretation: finding ?? null,
+      limitations: [
+        'Only operator-allowlisted local GET testing is supported.',
+        'A before/after observation does not establish causality or statistical significance.',
+        'Model-generated hypotheses are not proof of a root cause.',
+        'This JSON snapshot is neither digitally signed nor cryptographically verified.',
+      ],
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2) + '\n'], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'loadpilot-http-evidence-' + first.id.slice(0, 8) + '-' + second.id.slice(0, 8) + '.json';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   const ready = connected && target?.configured;
   return (
     <section className="panel app-test-panel" id="my-application" aria-label="Test your own local application">
@@ -252,6 +279,12 @@ function LocalApplicationPanel({ connected, accessKey, aiConfigured }: {
         <span className={'app-ready-badge ' + (ready ? 'app-ready-online' : '')}>
           <span className="tiny-success"/>{ready ? 'LOCAL APP READY' : 'OWNER SETUP REQUIRED'}
         </span>
+      </div>
+
+      <div className="app-story-steps" aria-label="Before investigation and verified follow-up">
+        <div className="app-story-step"><span className={first ? 'story-done' : 'story-current'}>01</span><div><strong>Before</strong><small>{first ? 'Real baseline recorded' : 'Measure your local API'}</small></div></div>
+        <div className="app-story-step"><span className={first ? 'story-current' : ''}>02</span><div><strong>Investigate</strong><small>{first ? 'Inspect metrics and change your app' : 'Review the baseline first'}</small></div></div>
+        <div className="app-story-step"><span className={comparison ? 'story-done' : first ? 'story-current' : ''}>03</span><div><strong>Verified follow-up</strong><small>{comparison ? 'Matched HTTP runs compared' : 'Rerun the same settings'}</small></div></div>
       </div>
       <div className="app-target">
         <span className="app-target-icon"><SymbolIcon kind="cpu"/></span>
@@ -290,6 +323,10 @@ function LocalApplicationPanel({ connected, accessKey, aiConfigured }: {
             onChange={e=>changeSettings('seconds',Number(e.target.value))} disabled={running || analyzing}/>
         </label>
       </div>
+
+      {first && !second && (
+        <div className="app-investigation-note" role="status"><SymbolIcon kind="chart"/><div><strong>Investigation checkpoint — baseline captured</strong><p>Review the p95, throughput and error rate below. Inspect your own service and make one deliberate change. Then run the matched follow-up. Nothing runs automatically.</p></div></div>
+      )}
       <div className="app-test-action">
         <div>
           <strong>{!first ? 'Step 1 — Measure baseline' : !second ? 'Step 2 — Measure after your change' : 'Results captured'}</strong>
@@ -334,6 +371,11 @@ function LocalApplicationPanel({ connected, accessKey, aiConfigured }: {
           <strong>{comparison.p95DeltaMs > 0 ? 'Latency increased' : comparison.p95DeltaMs < 0 ? 'Latency decreased' : 'No measured p95 change'}</strong>
           <span>{formatNumber(Math.abs(comparison.p95DeltaMs))} ms difference · {comparison.p95ReductionPercent == null ? '—' : formatNumber(comparison.p95ReductionPercent) + '%'} before-to-after reduction</span>
           <p>{comparison.note}</p>
+
+          <div className="app-evidence-actions">
+            <button type="button" className="button primary" onClick={exportLocalEvidence}><SymbolIcon kind="chart"/> Download HTTP evidence JSON</button>
+            <small>Actual recorded runs and comparison, with limitations. Unsigned snapshot — export before restarting the backend.</small>
+          </div>
           <button type="button" className="button ai-button" onClick={()=>void analyze()} disabled={!aiConfigured || analyzing}>
             {analyzing ? <span className="spinner"/> : <SymbolIcon kind="spark"/>}
             {analyzing ? 'Verifying AI evidence…' : 'Ask Muse to explain the measured change (paid)'}
@@ -714,8 +756,8 @@ export default function HomePage() {
           <section className="product-hero" aria-label="Introduction to LoadPilot AI">
             <div className="product-hero-copy">
               <p className="eyebrow"><span className="hero-accent-star">✦</span> THE AI PERFORMANCE INVESTIGATION STUDIO</p>
-              <h1>Find the slowdown.<br/><span>Test what fixes it.</span></h1>
-              <p className="headline-desc">Your API gets slow under pressure. LoadPilot runs safe experiments, reveals the numbers behind the slowdown, then uses Meta Muse Spark to suggest what to test next.</p>
+              <h1>AI investigates why your API is slow.<br/><span>Measured evidence, not guesses.</span></h1>
+              <p className="headline-desc">Test an API you control over real local HTTP. Capture a baseline, investigate a suspected bottleneck, then run the same bounded test after your change. Muse Spark explains measured evidence; it never controls execution.</p>
               <div className="hero-benefits">
                 <span><SymbolIcon kind="pulse"/> Simulate load</span>
                 <span><SymbolIcon kind="chart"/> Measure the gap</span>
@@ -729,9 +771,23 @@ export default function HomePage() {
               </div>
               <div className="hero-model"><span className={'pill-dot ' + (aiConfigured ? 'online' : '')}/> Powered by Meta Muse Spark 1.3 <span>·</span> No external traffic</div>
             </div>
-            <SystemJourney plan={plan} before={before} after={after} busy={busy}/>
+            
+            <div className="real-http-hero" aria-label="Real HTTP demo flow">
+              <span className="real-http-kicker"><SymbolIcon kind="cpu"/> REAL HTTP · YOUR LOCAL API</span>
+              <div className="real-http-stages">
+                <div><span>01 · BEFORE</span><strong>Measure a baseline</strong><p>Bounded GET requests to your owner-configured local endpoint. Actual p95, throughput and errors.</p></div>
+                <div><span>02 · INVESTIGATE</span><strong>Review the evidence</strong><p>Inspect your service and decide what to change. No automatic fixes or tests.</p></div>
+                <div><span>03 · FOLLOW-UP</span><strong>Verify the change</strong><p>Explicitly rerun the same plan, compare measured results and optionally ask Muse to explain the difference.</p></div>
+              </div>
+              <p className="real-http-footnote"><SymbolIcon kind="shield"/> No fabricated metrics · No public traffic · Measured difference is not causal proof.</p>
+            </div>
           </section>
 
+
+          <section className="safety-boundary" aria-label="AI execution safety boundary">
+            <div><span className="overline"><SymbolIcon kind="shield"/> ENFORCED SECURITY BOUNDARY</span><h2>AI cannot execute tests.</h2><p>Muse Spark proposes and explains; only an explicit user action can start a deterministic policy-checked runner.</p></div>
+            <div className="safety-facts"><span>Owner-consented loopback GET only</span><span>Maximum 10 req/s · 4 workers · 10 seconds</span><span>No AI-chosen targets, shell access or redirects</span></div>
+          </section>
           {!connected && (
             <section className="connect-panel" id="connect-workspace" aria-label="Connect to private LoadPilot API">
               <div className="connect-icon"><SymbolIcon kind="lock"/></div>
@@ -780,6 +836,7 @@ export default function HomePage() {
                 <span className="scenario-cta">Select hidden-queue investigation <SymbolIcon kind="arrow"/></span>
               </button>
             </div>
+            <div className="sample-preview"><SystemJourney plan={plan} before={before} after={after} busy={busy}/></div>
             <div className="scenario-next" role="status">
               <div className="scenario-next-symbol"><SymbolIcon kind={connected ? 'check' : 'lock'}/></div>
               <div>
@@ -1048,6 +1105,11 @@ export default function HomePage() {
             ) : <div className="history-empty">No runs recorded in this server process yet.</div>}
           </section>
 
+
+          <section className="limitations-summary" aria-label="Known limitations">
+            <div><span className="overline">WHAT THE DEMO DOES NOT CLAIM</span><h2>Limits, shown plainly.</h2></div>
+            <p><strong>Local-only:</strong> the HTTP target is a fixed loopback GET endpoint, not production or third-party infrastructure. <strong>Bounded traffic:</strong> strict rate, worker and duration caps. <strong>Evidence is not proof:</strong> a before/after difference and Muse&apos;s hypotheses cannot establish root cause or statistical significance. Results are temporary unless exported.</p>
+          </section>
           <footer className="footer"><span>LOADPILOT AI · BUILT FOR THE META GLOBAL AI DEVELOPER HACKATHON 2026</span><span><SymbolIcon kind="shield"/> Authorized local experiments only · Not production load testing</span></footer>
         </main>
       </div>
