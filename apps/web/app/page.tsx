@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   compactId, defaultPlan, formatNumber,
   type Comparison, type DashboardAction, type ExperimentRun, type Finding, type TestPlan,
   type TrialPair, type TrialReport, type ControlledReport, type HypothesisSession, type HypothesisReview,
+  type LocalAppStatus, type LocalAppRun, type LocalAppComparison, type LocalAppFinding,
 } from '../lib/contracts';
 
 type Busy = 'connecting' | 'planning' | 'running-slow' | 'running-optimized' | 'comparing' | 'diagnosing' | 'confirming' | 'isolating' | 'hypothesizing' | 'retesting' | 'reassessing' | null;
@@ -154,6 +155,204 @@ function SystemJourney({
       </div>
       <div className="journey-footer"><SymbolIcon kind="spark"/> <span>Muse Spark explains evidence. It never controls traffic.</span></div>
     </div>
+  );
+}
+
+
+/**
+ * A separate, real-HTTP product flow. Backend operator must opt in to a
+ * loopback GET endpoint; neither the user nor Meta selects target URLs.
+ */
+function LocalApplicationPanel({ connected, accessKey, aiConfigured }: {
+  connected: boolean; accessKey: string; aiConfigured: boolean;
+}) {
+  const [target, setTarget] = useState<LocalAppStatus | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [rps, setRps] = useState(3);
+  const [workers, setWorkers] = useState(2);
+  const [seconds, setSeconds] = useState(5);
+  const [first, setFirst] = useState<LocalAppRun | null>(null);
+  const [second, setSecond] = useState<LocalAppRun | null>(null);
+  const [comparison, setComparison] = useState<LocalAppComparison | null>(null);
+  const [finding, setFinding] = useState<LocalAppFinding | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!connected) { setTarget(null); return; }
+    let alive = true;
+    setLoading(true);
+    gateway<LocalAppStatus>(accessKey, 'appStatus').then(status => {
+      if (alive) { setTarget(status); setError(''); }
+    }).catch(e => {
+      if (alive) setError(e instanceof Error ? e.message : 'Could not check local app');
+    }).finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [connected, accessKey]);
+
+  function changeSettings(key: 'rate' | 'workers' | 'seconds', value: number) {
+    if (running || analyzing) return;
+    if (key === 'rate') setRps(value);
+    if (key === 'workers') setWorkers(value);
+    if (key === 'seconds') setSeconds(value);
+    setFirst(null); setSecond(null); setComparison(null); setFinding(null);
+  }
+
+  async function runLocalApp() {
+    if (!connected || !target?.configured || running) return;
+    setRunning(true); setError(''); setFinding(null);
+    try {
+      const result = await gateway<LocalAppRun>(accessKey, 'appRun', {
+        targetId: 'my-local-api',
+        plan: {
+          scenario: 'baseline', concurrency: workers, durationSeconds: seconds,
+          requestsPerSecond: rps, metricFocus: 'latency',
+          hypothesis: 'Measure this owner-authorized local HTTP API at the same bounded traffic settings.',
+        },
+      });
+      if (result.status !== 'completed') throw new Error('Application test cancelled');
+      if (!first) {
+        setFirst(result);
+      } else {
+        const checked = await gateway<LocalAppComparison>(accessKey, 'appCompare', {
+          beforeRunId: first.id, afterRunId: result.id,
+        });
+        setSecond(result);
+        setComparison(checked);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'App test failed');
+    } finally { setRunning(false); }
+  }
+
+  async function analyze() {
+    if (!first || !second || !aiConfigured) return;
+    setAnalyzing(true); setError('');
+    try {
+      const result = await gateway<LocalAppFinding>(accessKey, 'appDiagnose', {
+        beforeRunId: first.id, afterRunId: second.id,
+      });
+      setFinding(result);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'AI analysis failed');
+    } finally { setAnalyzing(false); }
+  }
+
+  const ready = connected && target?.configured;
+  return (
+    <section className="panel app-test-panel" id="my-application" aria-label="Test your own local application">
+      <div className="app-product-head">
+        <div>
+          <p className="overline"><SymbolIcon kind="cpu"/> REAL HTTP APPLICATION TESTING</p>
+          <h2>Test your own API. Not just our demo.</h2>
+          <p>Run actual HTTP GET requests against an application <strong>you control</strong> inside this Codespace or computer. Compare two matched runs before and after a change.</p>
+        </div>
+        <span className={'app-ready-badge ' + (ready ? 'app-ready-online' : '')}>
+          <span className="tiny-success"/>{ready ? 'LOCAL APP READY' : 'OWNER SETUP REQUIRED'}
+        </span>
+      </div>
+      <div className="app-target">
+        <span className="app-target-icon"><SymbolIcon kind="cpu"/></span>
+        <div>
+          <span className="field-label">AUTHORIZED TARGET</span>
+          <strong>{ready ? target.targetName : 'Your application endpoint'}</strong>
+          <small>{ready ? 'GET ' + target.path + ' · 127.0.0.1 · server-owned configuration'
+            : 'Set LOADPILOT_APP_TEST_URL and owner consent in apps/api/.env, then restart Fastify'}</small>
+        </div>
+        <span className="app-target-status">{loading ? 'CHECKING' : ready ? 'CONNECTED' : 'NOT CONFIGURED'}</span>
+      </div>
+      {!ready && (
+        <div className="app-setup-tip">
+          <SymbolIcon kind="shield"/>
+          <div>
+            <strong>Connect a real application safely</strong>
+            <p>Start your own API on local port 4100, choose a read-only GET route, and configure its fixed loopback address in the private Fastify environment. No arbitrary public URL testing is enabled.</p>
+            <a href="https://github.com/nHallecn/loadpilot-ai/blob/main/docs/LOCAL_APP_TESTING.md" target="_blank" rel="noreferrer">Read local application setup</a>
+          </div>
+        </div>
+      )}
+      <div className="app-settings">
+        <label>Request rate
+          <span>{rps} req/s</span>
+          <input aria-label="Local API request rate" type="range" min={1} max={10} value={rps}
+            onChange={e=>changeSettings('rate',Number(e.target.value))} disabled={running || analyzing}/>
+        </label>
+        <label>Parallel workers
+          <span>{workers}</span>
+          <input aria-label="Local API concurrency" type="range" min={1} max={4} value={workers}
+            onChange={e=>changeSettings('workers',Number(e.target.value))} disabled={running || analyzing}/>
+        </label>
+        <label>Duration
+          <span>{seconds} sec</span>
+          <input aria-label="Local API duration" type="range" min={5} max={10} value={seconds}
+            onChange={e=>changeSettings('seconds',Number(e.target.value))} disabled={running || analyzing}/>
+        </label>
+      </div>
+      <div className="app-test-action">
+        <div>
+          <strong>{!first ? 'Step 1 — Measure baseline' : !second ? 'Step 2 — Measure after your change' : 'Results captured'}</strong>
+          <p>{!first
+            ? 'Start a bounded test of your own running API.'
+            : !second
+              ? 'Make a safe change to your application, then run the exact same test again.'
+              : 'Both measured HTTP runs used the same test parameters. Changes are descriptive, not a proven cause.'}</p>
+        </div>
+        {second ? (
+          <button type="button" className="button outline-button" onClick={()=>{setFirst(null);setSecond(null);setComparison(null);setFinding(null);}} disabled={running || analyzing}>
+            Start new baseline
+          </button>
+        ) : (
+          <button type="button" className="button primary" disabled={!ready || running || analyzing}
+            onClick={()=>void runLocalApp()}>
+            {running ? <span className="spinner"/> : <SymbolIcon kind="play"/>}
+            {running ? 'Measuring your API…' : first ? 'Run matched follow-up' : 'Test my API'}
+          </button>
+        )}
+      </div>
+      {running && (
+        <div className="app-running">
+          <span className="spinner"/> Making bounded HTTP GET requests to your approved local endpoint…
+          <button type="button" className="cancel-button" onClick={()=>void gateway(accessKey,'appCancel').catch(()=>undefined)}>Cancel</button>
+        </div>
+      )}
+      {error && <div className="alert" role="alert"><SymbolIcon kind="shield"/> {error}</div>}
+      {first && (
+        <div className="app-measurement-grid">
+          {[first,second].filter((run): run is LocalAppRun => Boolean(run)).map((run,index) => (
+            <div className="app-measurement" key={run.id}>
+              <span className="field-label">{index===0?'BEFORE · REAL HTTP':'AFTER · REAL HTTP'}</span>
+              <strong>{formatNumber(run.metrics.latencyMs.p95)} <small>ms p95</small></strong>
+              <div><span>{run.metrics.requestCount} requests</span><span>{formatNumber(run.metrics.observedRps)} req/s</span><span>{formatNumber(run.metrics.errorRatePercent)}% errors</span></div>
+            </div>
+          ))}
+        </div>
+      )}
+      {comparison && (
+        <div className="app-comparison">
+          <strong>{comparison.p95DeltaMs > 0 ? 'Latency increased' : comparison.p95DeltaMs < 0 ? 'Latency decreased' : 'No measured p95 change'}</strong>
+          <span>{formatNumber(Math.abs(comparison.p95DeltaMs))} ms difference · {comparison.p95ReductionPercent == null ? '—' : formatNumber(comparison.p95ReductionPercent) + '%'} before-to-after reduction</span>
+          <p>{comparison.note}</p>
+          <button type="button" className="button ai-button" onClick={()=>void analyze()} disabled={!aiConfigured || analyzing}>
+            {analyzing ? <span className="spinner"/> : <SymbolIcon kind="spark"/>}
+            {analyzing ? 'Verifying AI evidence…' : 'Ask Muse to explain the measured change (paid)'}
+          </button>
+        </div>
+      )}
+      {finding && (
+        <div className="app-finding">
+          <span className="overline"><SymbolIcon kind="spark"/> META MUSE SPARK · EVIDENCE-CHECKED</span>
+          <h3>{finding.finding.finding.replaceAll('_',' ')}</h3>
+          <p>{finding.finding.explanation}</p>
+          <p><strong>Suggested next step:</strong> {finding.finding.nextStep}</p>
+          <div className="app-finding-citations">
+            {finding.citedEvidence.map(e=><span key={e.id}>{e.id}: <strong>{formatNumber(e.value)} {e.unit}</strong></span>)}
+          </div>
+          <p className="muted-note">{finding.limitations.join(' ')}</p>
+        </div>
+      )}
+      <p className="muted-note">Safety: owner opt-in · exact localhost GET endpoint · max 10 req/s, 4 workers, 10 seconds · no redirects or custom request bodies · no external Internet targets.</p>
+    </section>
   );
 }
 
@@ -493,6 +692,7 @@ export default function HomePage() {
         <div className="side-label">WORKSPACE</div>
         <nav className="side-nav" aria-label="Dashboard navigation">
           <a className="nav-active" href="#overview"><SymbolIcon kind="grid"/> Overview</a>
+          <a href="#my-application"><SymbolIcon kind="cpu"/> My Application</a>
           <a href="#experiments"><SymbolIcon kind="pulse"/> Experiments</a>
           <a href="#analysis"><SymbolIcon kind="spark"/> AI Investigator</a>
           <a href="#history"><SymbolIcon kind="chart"/> Run History</a>
@@ -545,6 +745,8 @@ export default function HomePage() {
           {error && <div className="alert" role="alert"><strong>Action needs attention</strong><span>{error}</span><button type="button" onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
           <div className="notice"><span className="live-ring"/><span role="status">{notice}</span></div>
 
+
+          <LocalApplicationPanel connected={connected} accessKey={accessKey} aiConfigured={aiConfigured}/>
 
           <section className="scenario-start" id="quickstart">
             <div className="scenario-heading">
