@@ -10,6 +10,7 @@ import type { Planner } from '../src/ai/meta-planner.js';
 import type { Diagnostician } from '../src/ai/meta-diagnostician.js';
 import type { HypothesisAgent } from '../src/ai/meta-hypothesis-agent.js';
 import { ExperimentService } from '../src/experiments/service.js';
+import type { AppInvestigator } from '../src/app-testing/analysis.js';
 
 if (process.env.LOADPILOT_E2E !== '1' || process.env.NODE_ENV !== 'test') {
   throw new Error('Browser fixture server is restricted to explicit test mode');
@@ -90,12 +91,28 @@ const hypothesisAgent: HypothesisAgent = {
   },
 };
 
+
+const appInvestigator: AppInvestigator = {
+  async diagnose(evidence) {
+    return {
+      model: 'fixture-model-no-meta-calls',
+      finding: {
+        finding: evidence.expectedFinding,
+        evidenceIds: ['before.p95_ms','after.p95_ms','before.requests','after.requests'],
+        explanation: 'The authorized local application was measured with genuine HTTP GET requests; the two runs show descriptive changes but no proven root cause.',
+        nextStep: 'Repeat after a documented code-level optimization and check background load before attributing any improvement.',
+      },
+    };
+  },
+};
+
 const app = buildApp({
   demoToken: token,
   experiments: new ExperimentService(),
   planner,
   diagnostician,
   hypothesisAgent,
+  appInvestigator,
   hypothesisCooldownMs: 0,
 });
 
