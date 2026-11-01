@@ -86,7 +86,7 @@ Only functionality created during the event will be demonstrated or presented as
 
 ## First-time dashboard experience
 
-The homepage now shows a schematic request-to-evidence flow, two **interactive bounded test scenarios**, and a short four-step product walkthrough before the advanced experiment controls. Select a scenario, connect the private dashboard access key and run the actual sample experiments. The diagram displays actual measured p95 values only after completed runs; it does not invent demonstration results. See [Guided demo UI](docs/GUIDED_UI.md).
+The homepage now prioritizes **Test Your API**: an authorized local endpoint can be measured over real HTTP. Optional sample scenarios and a schematic request-to-evidence flow help first-time visitors understand how the evidence-based investigation works. Select a scenario, connect the private dashboard access key and run the actual sample experiments. The diagram displays actual measured p95 values only after completed runs; it does not invent demonstration results. See [Guided demo UI](docs/GUIDED_UI.md).
 
 ## Browser-level validation
 
