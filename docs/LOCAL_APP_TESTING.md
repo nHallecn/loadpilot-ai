@@ -2,7 +2,7 @@
 
 ## What this capability changes
 
-Previously LoadPilot only benchmarked its bundled in-process Fastify demo. The new **My Application** workflow sends actual, bounded HTTP GET requests to an **owner-selected local application** running on your own computer or Codespace. It records measured p50/p95/p99 latency, requests/second, errors and count. It supports a matched baseline and follow-up, followed by optional evidence-checked Muse Spark interpretation.
+Previously LoadPilot only benchmarked its bundled in-process Fastify demo. The new **Test Your API** workflow sends actual, bounded HTTP GET requests to an **owner-selected local application** running on your own computer or Codespace. It records measured p50/p95/p99 latency, requests/second, errors and count. It supports a matched baseline and follow-up, followed by optional evidence-checked Muse Spark interpretation.
 
 **This does not enable arbitrary Internet load testing.** Public HTTPS endpoints, third-party sites, arbitrary request URLs, authentication headers, POST bodies and distributed testing are deliberately out of scope. This is a controlled local-first integration, not production multi-tenant testing.
 
@@ -41,7 +41,7 @@ Previously LoadPilot only benchmarked its bundled in-process Fastify demo. The n
 
    Your existing Next.js frontend must remain running in a third terminal, using `apps/web/.env.local` and port 3000.
 
-4. In the **private** port 3000 frontend preview, connect using your separate `DASHBOARD_ACCESS_TOKEN`. Under **Test your own API. Not just our demo**, the target should display **Local Shop API** and `GET /api/products`. If it says *Not configured*, restart Fastify with the exact three environment variables above, then reload the webpage.
+4. In the **private** port 3000 frontend preview, connect using your separate `DASHBOARD_ACCESS_TOKEN`. Under **Test your API**, the target should display **Local Shop API** and `GET /api/products`. If it says *Not configured*, restart Fastify with the exact three environment variables above, then reload the webpage.
 
 5. Keep the default rate **3 req/s**, **2 workers**, **5 seconds**. Click **Test my API**. The first measured baseline is recorded from actual local HTTP requests.
 
