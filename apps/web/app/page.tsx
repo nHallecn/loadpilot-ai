@@ -400,9 +400,11 @@ function LocalApplicationPanel({ connected, accessKey, aiConfigured }: {
 }
 
 export default function HomePage() {
+  type JourneyPath = 'local' | 'sample' | 'investigate';
   const [accessKey, setAccessKey] = useState('');
   const [connected, setConnected] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
+  const [journeyPath, setJourneyPath] = useState<JourneyPath>('local');
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('Ready for a local performance investigation.');
@@ -474,6 +476,27 @@ export default function HomePage() {
     setNotice(kind === 'queue'
       ? 'Hidden queue scenario selected. Run isolated factors, then ask Muse for a controlled follow-up.'
       : 'Latency gap scenario selected. Run both experiments to collect a real before-and-after comparison.');
+  }
+
+  function chooseJourneyPath(path: JourneyPath) {
+    if (busy) return;
+    setJourneyPath(path);
+    const destination = path === 'local' ? (connected ? 'my-application' : 'connect-workspace')
+      : path === 'sample' ? 'quickstart' : (comparison ? 'analysis' : 'experiments');
+    window.requestAnimationFrame(() => {
+      document.getElementById(destination)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    if (path === 'local') {
+      setNotice(connected
+        ? 'Your private API workspace is ready. Set a bounded run, then measure the before-and-after change.'
+        : 'Connect the private workspace first. Your key stays in this browser tab and no traffic runs yet.');
+    } else if (path === 'sample') {
+      setNotice('Choose a sample question to see the complete investigation without touching an external service.');
+    } else {
+      setNotice(comparison
+        ? 'Your comparison is ready. Ask Muse Spark to explain the measured difference and cite its evidence.'
+        : 'Run a comparison first. AI Investigator only works from completed measurements, never from guesses.');
+    }
   }
 
   async function generatePlan() {
@@ -798,6 +821,42 @@ export default function HomePage() {
           {connected && (
             <div className="connected-banner"><span><span className="tiny-success"/> Private backend verified · Authorized testing only · {aiConfigured ? 'Meta AI ready' : 'Meta AI not configured'}</span><button className="text-button" onClick={() => { setConnected(false); setAiConfigured(false); setAccessKey(''); clearResults(); setHistory([]); }} type="button" disabled={Boolean(busy)}>Lock workspace</button></div>
           )}
+
+          <section className="mission-control" aria-label="Choose an investigation path">
+            <div className="mission-header">
+              <div>
+                <p className="section-kicker">START HERE · 60-SECOND WORKFLOW</p>
+                <h2>What do you want to investigate?</h2>
+                <p>Pick a path and LoadPilot will take you to the next safe action. You can change direction at any time.</p>
+              </div>
+              <div className="mission-status"><span className="live-ring"/> {connected ? 'WORKSPACE READY' : 'ONE STEP FROM START'}</div>
+            </div>
+            <div className="mission-paths">
+              <button type="button" className={'mission-path ' + (journeyPath === 'local' ? 'mission-path-active' : '')} onClick={() => chooseJourneyPath('local')} disabled={Boolean(busy)}>
+                <span className="mission-path-top"><span className="mission-path-number">01</span><span className="mission-path-icon"><SymbolIcon kind="cpu"/></span></span>
+                <strong>Test my local API</strong>
+                <span>Measure a real owner-controlled localhost endpoint before and after a change.</span>
+                <small>{connected ? 'READY · JUMP TO TEST YOUR API' : 'CONNECT WORKSPACE FIRST'} <SymbolIcon kind="arrow"/></small>
+              </button>
+              <button type="button" className={'mission-path ' + (journeyPath === 'sample' ? 'mission-path-active' : '')} onClick={() => chooseJourneyPath('sample')} disabled={Boolean(busy)}>
+                <span className="mission-path-top"><span className="mission-path-number">02</span><span className="mission-path-icon mission-path-icon-mint"><SymbolIcon kind="pulse"/></span></span>
+                <strong>Explore a sample case</strong>
+                <span>See a safe, repeatable latency investigation with no external traffic.</span>
+                <small>CHOOSE A SCENARIO <SymbolIcon kind="arrow"/></small>
+              </button>
+              <button type="button" className={'mission-path ' + (journeyPath === 'investigate' ? 'mission-path-active' : '')} onClick={() => chooseJourneyPath('investigate')} disabled={Boolean(busy)}>
+                <span className="mission-path-top"><span className="mission-path-number">03</span><span className="mission-path-icon mission-path-icon-pink"><SymbolIcon kind="spark"/></span></span>
+                <strong>Explain a measured gap</strong>
+                <span>Use Muse Spark to form a cited hypothesis only after evidence exists.</span>
+                <small>{comparison ? 'COMPARISON READY · ASK MUSE' : 'MEASURE FIRST'} <SymbolIcon kind="arrow"/></small>
+              </button>
+            </div>
+            <div className="mission-next">
+              <div className="mission-next-mark"><SymbolIcon kind={journeyPath === 'investigate' ? 'spark' : journeyPath === 'sample' ? 'pulse' : connected ? 'play' : 'lock'}/></div>
+              <div className="mission-next-copy"><span className="mission-next-label">YOUR NEXT MOVE</span><strong>{journeyPath === 'local' ? (connected ? 'Configure your first bounded run' : 'Connect your private workspace') : journeyPath === 'sample' ? 'Choose the question you want to answer' : (comparison ? 'Ask Muse Spark to investigate the evidence' : 'Run both variants to create evidence')}</strong><p>{journeyPath === 'local' ? 'No public traffic. The runner accepts only the owner-authorized target and hard limits.' : journeyPath === 'sample' ? 'Start with a clear question, then compare actual p95 latency and throughput.' : 'The model can explain and propose. It cannot execute a test or invent a measurement.'}</p></div>
+              <button type="button" className="mission-next-button" onClick={() => chooseJourneyPath(journeyPath)} disabled={Boolean(busy)}>{journeyPath === 'local' ? (connected ? 'Open test controls' : 'Connect workspace') : journeyPath === 'sample' ? 'Open sample cases' : (comparison ? 'Open investigator' : 'Open experiments')} <SymbolIcon kind="arrow"/></button>
+            </div>
+          </section>
 
           {error && <div className="alert" role="alert"><strong>Action needs attention</strong><span>{error}</span><button type="button" onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
           <div className="notice"><span className="live-ring"/><span role="status">{notice}</span></div>
