@@ -710,26 +710,17 @@ export default function HomePage() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
-        <div className="brand"><div className="brand-mark"><SymbolIcon kind="pulse"/></div><div><strong>loadpilot<span>.ai</span></strong><small>PERFORMANCE INTELLIGENCE</small></div></div>
-        <div className="side-label">WORKSPACE</div>
-        <nav className="side-nav" aria-label="Dashboard navigation">
-          <a className="nav-active" href="#overview"><SymbolIcon kind="grid"/> Overview</a>
-          <a href="#my-application"><SymbolIcon kind="cpu"/> Test Your API</a>
-          <a href="#experiments"><SymbolIcon kind="pulse"/> Experiments</a>
-          <a href="#analysis"><SymbolIcon kind="spark"/> AI Investigator</a>
-          <a href="#history"><SymbolIcon kind="chart"/> Run History</a>
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="sidebar-info"><span className="sidebar-info-icon"><SymbolIcon kind="shield"/></span><strong>Controlled by design</strong><p>Owner-authorized API targets · bounded read-only tests</p></div>
-          <p className="sidebar-credit">META GLOBAL AI HACKATHON · 2026<br/>Indie Developer Track</p>
-        </div>
-      </aside>
-
       <div className="content">
         <header className="topbar">
-          <div className="breadcrumbs">Workspace <span>/</span> <strong>Overview</strong></div>
-          <div className="topbar-right"><span className={'connection-dot ' + (connected ? 'online' : '')}/><span>{connected ? 'API CONNECTED' : 'NOT CONNECTED'}</span><span className="topbar-divider"/><span className="user-avatar">LP</span></div>
+          <a className="brand" href="#overview" aria-label="LoadPilot overview"><div className="brand-mark"><SymbolIcon kind="pulse"/></div><div><strong>loadpilot<span>.ai</span></strong><small>PERFORMANCE INTELLIGENCE</small></div></a>
+          <nav className="top-nav" aria-label="Workspace navigation">
+            <a className="top-nav-active" href="#overview">Overview</a>
+            <a href="#my-application">Test API</a>
+            <a href="#experiments">Measure</a>
+            <a href="#analysis">Investigate</a>
+            <a href="#history">History</a>
+          </nav>
+          <div className="topbar-right"><span className={'connection-dot ' + (connected ? 'online' : '')}/><span>{connected ? 'CONNECTED' : 'READY TO CONNECT'}</span><span className="topbar-divider"/><span className="user-avatar">LP</span></div>
         </header>
 
         <main id="overview" className="dashboard">
