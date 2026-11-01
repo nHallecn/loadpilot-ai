@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { validateLocalTarget } from '../src/app-testing/contracts.js';
 import { ApplicationTestService } from '../src/app-testing/service.js';
-import { prepareAppEvidence, verifyAppFinding, type AppInvestigator, type AppFinding } from '../src/app-testing/analysis.js';
+import { verifyAppFinding, type AppInvestigator, type AppFinding } from '../src/app-testing/analysis.js';
 
 const token = 'operator-authorized-local-test-token-12345';
 const headers = { authorization: 'Bearer ' + token };
@@ -160,13 +160,6 @@ describe('authenticated measured HTTP app tests', () => {
     expect(result.json().metrics.errorRatePercent).toBe(100);
   }, 12000);
 
-  it('checks numeric verdicts rather than accepting an LLM category', async () => {
-    const history = (await app.inject({method:'GET',url:'/applications/runs',headers})).json().runs;
-    const before = history[2], after = history[1];
-    // Read-only validation remains independent of remote Meta availability.
-    const cmp = app.testingUnused;
-    void before;void after;void cmp;
-  });
 });
 
 describe('model numeric evidence gate', () => {
