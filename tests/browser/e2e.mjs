@@ -131,6 +131,22 @@ async function flow() {
   await button(/^Connect/).click();
   await checkVisible(page.getByText('API CONNECTED'), 'Private API connected');
 
+  // New product capability: actual HTTP requests to a separate owner-controlled app.
+  await checkVisible(page.getByText('LOCAL APP READY'), 'Operator-authorized local HTTP target is configured');
+  await checkVisible(page.getByText('Local Shop API'), 'Local shop app is displayed');
+  await button(/^Test my API$/).click();
+  await checkVisible(page.locator('.app-measurement').first(), 'True HTTP baseline recorded', 22000);
+  const realBefore = await gateway('appHistory');
+  assert.ok(realBefore.runs[0].metrics.requestCount > 0);
+  assert.equal(realBefore.runs[0].executionMode, 'authorized_loopback_http_get');
+  await button(/Run matched follow-up/).click();
+  await checkVisible(page.locator('.app-measurement').nth(1), 'Second real HTTP measurement recorded', 22000);
+  await checkVisible(page.locator('.app-comparison'), 'Matched real HTTP comparison rendered');
+  await button(/Ask Muse to explain the measured change/).click();
+  await checkVisible(page.locator('.app-finding'), 'Numeric-verified local app AI finding rendered');
+  assert.equal((await gateway('appHistory')).runs.length, 2);
+  console.log('PASS Owner-authorized real HTTP app tests and evidence-checked AI fixture');
+
   // Live frontend -> Next gateway -> mock Meta planning adapter.
   await button(/Generate plan with Muse Spark/).click();
   await checkVisible(page.getByText('MUSE SPARK PROPOSAL'), 'Validated AI plan displayed');
@@ -198,11 +214,20 @@ async function flow() {
 }
 
 try {
+  start('shop', 'node', ['apps/api/scripts/sample-owned-app.mjs'], {
+    SHOP_QUERY_MODE: 'uncached',
+  });
+  await untilHealthy('http://127.0.0.1:4100/api/products',
+    async response => (await response.json()).resultCount === 12, 'Owner-authorized shop API');
+
   start('api', 'pnpm', ['--filter', '@loadpilot/api', 'exec', 'tsx', 'scripts/e2e-fixture-server.ts'], {
     NODE_ENV: 'test',
     LOADPILOT_E2E: '1',
     LOADPILOT_DEMO_TOKEN: apiSecret,
     MODEL_API_KEY: '',
+    LOADPILOT_APP_TEST_URL: 'http://127.0.0.1:4100/api/products',
+    LOADPILOT_APP_TEST_NAME: 'Local Shop API',
+    LOADPILOT_APP_TEST_CONSENT: 'I_OWN_THIS_LOCAL_API',
   });
   await untilHealthy('http://127.0.0.1:4000/health',
     async response => (await response.json()).service === 'loadpilot-api', 'Fastify API');
