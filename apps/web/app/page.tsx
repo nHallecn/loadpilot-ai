@@ -38,6 +38,7 @@ function SymbolIcon({ kind }: { kind: string }) {
     grid: <><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
     spark: <><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z"/><path d="m19 17 .7 2.3L22 20l-2.3.7L19 23l-.7-2.3L16 20l2.3-.7L19 17Z"/></>,
     play: <><path d="m8 5 11 7-11 7V5Z"/></>,
+    check: <><path d="m5 12 4 4L19 6"/></>,
     shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></>,
     chart: <><path d="M3 3v18h18"/><path d="m7 16 4-5 3 2 5-7"/></>,
     arrow: <><path d="M5 12h14m-7-7 7 7-7 7"/></>,
