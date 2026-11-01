@@ -34,6 +34,7 @@ docs/
   EXPERIMENTS.md    Local benchmark and comparison walkthrough
   DIAGNOSTICS.md    Evidence-citing Meta AI diagnosis and independent verification
   DASHBOARD.md      Codespaces setup, app workflow and security boundaries
+  GUIDED_UI.md      Visual demo introduction, scenario presets and manual testing
   REPEATABILITY.md Repeat trials, transparent thresholds and evidence export
   CONTROLLED_INVESTIGATION.md  Isolation of serialization vs processing delay
   AI_HYPOTHESES.md            Muse-guided follow-ups and evidence verification
@@ -75,6 +76,10 @@ The model issues **proposals only**; a separate deterministic runner executes on
 ## Hackathon integrity
 
 Only functionality created during the event will be demonstrated or presented as new. Existing personal-project code is not copied into this repository. Third-party libraries are listed in package manifests; see [HACKATHON_CONTRIBUTIONS.md](HACKATHON_CONTRIBUTIONS.md).
+
+## First-time dashboard experience
+
+The homepage now shows a schematic request-to-evidence flow, two **interactive bounded test scenarios**, and a short four-step product walkthrough before the advanced experiment controls. Select a scenario, connect the private dashboard access key and run the actual sample experiments. The diagram displays actual measured p95 values only after completed runs; it does not invent demonstration results. See [Guided demo UI](docs/GUIDED_UI.md).
 
 ## Browser-level validation
 
