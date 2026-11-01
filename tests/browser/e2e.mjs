@@ -112,6 +112,16 @@ async function flow() {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await checkVisible(page.getByRole('heading', { name: /Find the slowdown/ }), 'Dashboard page loaded');
 
+  await checkVisible(page.getByRole('heading', { name: /Pick a problem/ }), 'Guided scenario picker visible');
+  await checkVisible(page.getByText('SYSTEM UNDER TEST'), 'Schematic of the private demo target is visible');
+  await button(/Select hidden-queue investigation/).click();
+  assert.equal(await page.locator('#rate').inputValue(), '5');
+  assert.equal(await page.locator('#concurrency').inputValue(), '1');
+  await button(/Select latency investigation/).click();
+  assert.equal(await page.locator('#rate').inputValue(), '20');
+  assert.equal(await page.locator('#concurrency').inputValue(), '4');
+  console.log('PASS Guided scenario cards update real plan controls');
+
   await enterAccessKey('wrong-private-test-secret');
   await button(/^Connect/).click();
   await checkVisible(page.locator('.alert'), 'Invalid access key rejected');
