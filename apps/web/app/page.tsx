@@ -721,10 +721,10 @@ export default function HomePage() {
                 <span><SymbolIcon kind="spark"/> Investigate with AI</span>
               </div>
               <div className="hero-actions">
-                <a className="button primary hero-primary-action" href="#quickstart">
-                  Explore sample investigations <SymbolIcon kind="arrow"/>
+                <a className="button primary hero-primary-action" href="#my-application">
+                  Test your API <SymbolIcon kind="arrow"/>
                 </a>
-                <a className="hero-how-link" href="#how-it-works">See how it works</a>
+                <a className="hero-how-link" href="#quickstart">Try an example</a>
               </div>
               <div className="hero-model"><span className={'pill-dot ' + (aiConfigured ? 'online' : '')}/> Powered by Meta Muse Spark 1.3 <span>·</span> No external traffic</div>
             </div>
@@ -810,7 +810,7 @@ export default function HomePage() {
 
           <div className="main-grid" id="experiments">
             <section className="panel experiment-panel">
-              <div className="panel-header"><div><div className="overline"><SymbolIcon kind="cpu"/> STEP 1 · CONFIGURE</div><h3>Run your chosen scenario</h3><p>Adjust safe test settings, then launch a controlled experiment against the bundled sample API.</p></div><span className="status-chip">TARGET LOCKED</span></div>
+              <div className="panel-header"><div><div className="overline"><SymbolIcon kind="cpu"/> STEP 1 · SAMPLE CONFIGURATION</div><h3>Run an example investigation</h3><p>These controls run the included sample endpoint. Use Test your API above for your own application.</p></div><span className="status-chip">TARGET LOCKED</span></div>
               <label htmlFor="objective" className="field-label">PERFORMANCE QUESTION</label>
               <textarea id="objective" className="objective" rows={3} maxLength={600} value={objective} disabled={!connected || Boolean(busy)} onChange={(event)=>setObjective(event.target.value)} placeholder="What should LoadPilot investigate?"/>
               <button type="button" className="button ai-button" disabled={!connected || !aiConfigured || Boolean(busy) || objective.trim().length < 10} onClick={()=>void generatePlan()}>{busy==='planning'?<span className="spinner"/>:<SymbolIcon kind="spark"/>} {busy==='planning'?'Generating a bounded plan…':'Generate plan with Muse Spark'} <span className="button-hint">USES MODEL API</span></button>
