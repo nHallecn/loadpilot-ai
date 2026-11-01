@@ -13,6 +13,9 @@ import { randomUUID } from 'node:crypto';
 import { createMetaHypothesisAgent, HypothesisAgentError, type HypothesisAgent } from './ai/meta-hypothesis-agent.js';
 import { initialEvidence, createFollowUp, followUpEvidence, verifyReassessment, proposeRequestSchema, reassessRequestSchema, type HypothesisProposal } from './ai/hypothesis-evidence.js';
 import type { TestPlan } from './ai/schemas.js';
+import { ApplicationTestService } from './app-testing/service.js';
+import { validateLocalTarget, appRunRequestSchema, appCompareRequestSchema } from './app-testing/contracts.js';
+import { analysisRequestSchema, prepareAppEvidence, verifyAppFinding, createMetaAppInvestigator, type AppInvestigator } from './app-testing/analysis.js';
 
 type AppOptions = {
   planner?: Planner;
@@ -20,6 +23,8 @@ type AppOptions = {
   experiments?: ExperimentService;
   diagnostician?: Diagnostician;
   hypothesisAgent?: HypothesisAgent;
+  applicationService?: ApplicationTestService;
+  appInvestigator?: AppInvestigator;
   /** Test-only dependency injection; never accepted from HTTP. */
   hypothesisCooldownMs?: number;
 };
@@ -35,12 +40,30 @@ export function buildApp(options: AppOptions = {}) {
   const app = Fastify({ logger: true, bodyLimit: 4096 });
   const demoToken = options.demoToken ?? process.env.LOADPILOT_DEMO_TOKEN ?? '';
   const experiments = options.experiments ?? new ExperimentService();
-  app.addHook('onClose', async () => experiments.close());
+  const appTarget = process.env.LOADPILOT_APP_TEST_URL?.trim();
+  // The operator, not the dashboard user or the model, selects the local app.
+  // An explicit owner consent flag is required to enable real network traffic.
+  if (!options.applicationService && appTarget &&
+      process.env.LOADPILOT_APP_TEST_CONSENT !== 'I_OWN_THIS_LOCAL_API') {
+    throw new Error('Local app testing requires explicit LOADPILOT_APP_TEST_CONSENT');
+  }
+  const applicationService = options.applicationService ?? new ApplicationTestService(
+    appTarget ? validateLocalTarget(appTarget, process.env.LOADPILOT_APP_TEST_NAME || 'My local API') : undefined,
+  );
+  app.addHook('onClose', async () => {
+    await applicationService.close();
+    await experiments.close();
+  });
   const apiKey = process.env.MODEL_API_KEY ?? '';
   const planner = options.planner ??
     (apiKey ? createMetaPlanner({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
   const diagnostician = options.diagnostician ??
     (apiKey ? createMetaDiagnostician({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
+  const appInvestigator = options.appInvestigator ??
+    (apiKey ? createMetaAppInvestigator({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
+  const appDiagnosisCache = new Map<string, unknown>();
+  let appDiagnosisActive = false;
+  let appDiagnosisLastAt = 0;
   const hypothesisAgent = options.hypothesisAgent ??
     (apiKey ? createMetaHypothesisAgent({ apiKey, model: process.env.META_MODEL || 'muse-spark-1.3' }) : undefined);
   type HypothesisSession = {
@@ -361,6 +384,132 @@ export function buildApp(options: AppOptions = {}) {
     } finally {
       hypothesisBusy = false;
     }
+  });
+
+
+  /**
+   * Authorized application tests are separate from the synthetic benchmarks.
+   * No HTTP request may contain a host, path, URL, headers or HTTP method.
+   */
+  app.get('/applications/status', async (request, reply) => {
+    if (!demoToken) return reply.code(503).send({ error: 'Backend not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    return {
+      configured: applicationService.enabled,
+      targetId: 'my-local-api',
+      targetName: applicationService.config?.displayName ?? null,
+      method: 'GET',
+      path: applicationService.config ? new URL(applicationService.config.url).pathname : null,
+      limits: { maxConcurrency: 4, maxRequestsPerSecond: 10, maxDurationSeconds: 10, maxRequestsPerRun: 100 },
+      note: 'Owner-opted-in loopback only. Public applications and arbitrary URLs are not supported.',
+    };
+  });
+
+  app.post('/applications/run', async (request, reply) => {
+    if (!demoToken) return reply.code(503).send({ error: 'Backend not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    if (!applicationService.enabled) {
+      return reply.code(503).send({ error: 'No owner-authorized local API is configured' });
+    }
+    const parsed = appRunRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Invalid bounded application test plan' });
+    if (applicationService.active || experiments.active) {
+      return reply.code(409).send({ error: 'Another load experiment is active' });
+    }
+    try {
+      const result = await applicationService.run(parsed.data);
+      return result ? reply.send(result) : reply.code(409).send({ error: 'Another local test is active' });
+    } catch {
+      request.log.error({ type: 'app_test_error' }, 'Local app run failed');
+      return reply.code(500).send({ error: 'Application run failed' });
+    }
+  });
+
+  app.get('/applications/runs', async (request, reply) => {
+    if (!demoToken) return reply.code(503).send({ error: 'Backend not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    return reply.send({ runs: applicationService.list() });
+  });
+
+  app.post('/applications/compare', async (request, reply) => {
+    if (!demoToken) return reply.code(503).send({ error: 'Backend not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const parsed = appCompareRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Invalid application comparison IDs' });
+    const comparison = applicationService.compare(parsed.data.beforeRunId, parsed.data.afterRunId);
+    return comparison ? reply.send(comparison) : reply.code(422).send({
+      error: 'Application runs must be distinct, completed, chronological and use identical parameters',
+    });
+  });
+
+  app.post('/ai/app-diagnose', async (request, reply) => {
+    if (!demoToken || !appInvestigator) return reply.code(503).send({ error: 'App AI diagnosis unavailable' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const parsed = analysisRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Invalid application analysis IDs' });
+    const { beforeRunId, afterRunId } = parsed.data;
+    const comparison = applicationService.compare(beforeRunId, afterRunId);
+    const before = applicationService.get(beforeRunId);
+    const after = applicationService.get(afterRunId);
+    if (!comparison || !before || !after || !before.metrics.requestCount || !after.metrics.requestCount) {
+      return reply.code(422).send({ error: 'Two distinct compatible measured application runs required' });
+    }
+    const key = beforeRunId + ':' + afterRunId;
+    const cached = appDiagnosisCache.get(key);
+    if (cached) return reply.send({ ...cached as object, cached: true });
+    if (appDiagnosisActive || Date.now() - appDiagnosisLastAt < 8000) {
+      return reply.code(429).send({ error: 'AI app analysis is cooling down' });
+    }
+    const evidence = prepareAppEvidence(before, after, comparison);
+    appDiagnosisActive = true;
+    appDiagnosisLastAt = Date.now();
+    try {
+      const result = await appInvestigator.diagnose(evidence);
+      if (!verifyAppFinding(evidence, result.finding)) {
+        return reply.code(502).send({ error: 'Model claim conflicts with measured evidence' });
+      }
+      const finding = {
+        status: 'evidence_checked_app_observation',
+        ...result,
+        beforeRunId, afterRunId,
+        citedEvidence: evidence.evidence.filter(item => result.finding.evidenceIds.includes(item.id)),
+        limitations: [
+          'These are two ordered measurements of one authorized local API, not controlled proof of any specific root cause.',
+          'No source code, responses or application secrets were sent to the AI model.',
+        ],
+        cached: false,
+      };
+      appDiagnosisCache.set(key, finding);
+      while (appDiagnosisCache.size > 8) {
+        const oldest = appDiagnosisCache.keys().next().value;
+        if (oldest) appDiagnosisCache.delete(oldest);
+      }
+      return reply.send(finding);
+    } catch {
+      return reply.code(502).send({ error: 'AI app analysis failed or returned unsupported evidence' });
+    } finally {
+      appDiagnosisActive = false;
+    }
+  });
+
+  app.delete('/applications/active', async (request, reply) => {
+    if (!demoToken) return reply.code(503).send({ error: 'Backend not configured' });
+    if (!validBearer(request.headers.authorization, demoToken)) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    return reply.code(applicationService.cancel() ? 202 : 404).send({
+      status: applicationService.active ? 'cancellation_requested' : 'no_active_app_test',
+    });
   });
 
   app.post('/ai/diagnose', async (request, reply) => {
