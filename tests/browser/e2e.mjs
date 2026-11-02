@@ -134,7 +134,7 @@ async function flow() {
 
   await enterAccessKey(uiSecret);
   await button(/^Connect$/).click();
-  await checkVisible(page.getByText('API CONNECTED'), 'Private API connected');
+  await checkVisible(page.locator('.topbar-right').getByText('CONNECTED', { exact: true }), 'Private API connected');
 
   // New product capability: actual HTTP requests to a separate owner-controlled app.
   await checkVisible(page.getByText('LOCAL APP READY'), 'Operator-authorized local HTTP target is configured');
