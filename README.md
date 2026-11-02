@@ -7,7 +7,7 @@
 **AI that investigates why your API is slow — using measured evidence, not guesses.**  
 Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
-> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis, an interactive Next.js dashboard with real local HTTP testing and JSON evidence downloads, descriptive repeat-trial adjudication with checksum evidence exports, **one-factor controlled bottleneck contrasts**, and a model-guided, explicitly authorized follow-up investigation (on a feature branch pending review). History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
+> Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis, an interactive Next.js dashboard with real local HTTP testing and JSON evidence downloads, descriptive repeat-trial adjudication with checksum evidence exports, **one-factor controlled bottleneck contrasts**, and a model-guided, explicitly authorized follow-up investigation. All of these workflows are merged into the main branch. History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
 
 ## Judge demo: real local HTTP, not just a synthetic benchmark
 
@@ -105,6 +105,8 @@ The homepage now prioritizes **Test Your API**: an authorized local endpoint can
 GitHub Actions runs a **headless Chromium end-to-end test** of the real Next.js UI, private gateway, Fastify backend and bounded sample runner. AI output is injected as an explicit test fixture: **no Meta API credits are used** and screenshots from CI are **not live Muse Spark evidence**. The test exercises authentication, planning, two-run comparison, model diagnosis, repeat-trial JSON export/checksum, one-factor contrast, explicit follow-up approval and evidence review. See [Browser testing and live recording](docs/BROWSER_VALIDATION.md).
 
 ## Submission
+
+Lead with **real owner-approved HTTP testing**, not the synthetic benchmark. See the [judge-friendly submission copy](docs/SUBMISSION.md) and [three-minute recording script](docs/DEMO_SCRIPT.md). The final video and official portal submission remain outstanding until verified.
 
 The [submission copy](docs/SUBMISSION.md), [three-minute demonstration script](docs/DEMO_SCRIPT.md), and [final checklist](docs/FINAL_CHECKLIST.md) are prepared. **The video has not been recorded or uploaded and the official submission has not been made.** Confirm actual portal fields, judge access and deadlines before claiming submission.
 
