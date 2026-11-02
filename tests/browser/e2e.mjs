@@ -146,7 +146,7 @@ async function flow() {
   await checkVisible(page.locator('.topbar-right').getByText('CONNECTED', { exact: true }), 'Private API connected');
   await page.getByRole('button', { name: 'Workspace controls' }).click();
   await checkVisible(page.getByText('Connected', { exact: true }), 'Workspace menu reports live connection');
-  await checkVisible(page.getByRole('button', { name: 'Lock workspace' }), 'Functional lock action is available');
+  await checkVisible(page.getByRole('region', { name: 'Workspace controls' }).getByRole('button', { name: 'Lock workspace' }), 'Functional lock action is available');
   await page.getByRole('button', { name: 'Workspace controls' }).click();
 
   // New product capability: actual HTTP requests to a separate owner-controlled app.
