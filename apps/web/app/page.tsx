@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import {
   compactId, defaultPlan, formatNumber,
@@ -46,6 +46,7 @@ function SymbolIcon({ kind }: { kind: string }) {
     arrow: <><path d="M5 12h14m-7-7 7 7-7 7"/></>,
     lock: <><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>,
     refresh: <><path d="M20 11a8 8 0 0 0-14-5L3 9"/><path d="M3 4v5h5"/><path d="M4 13a8 8 0 0 0 14 5l3-3"/><path d="M21 20v-5h-5"/></>,
+    chevron: <path d="m6 9 6 6 6-6"/>,
     cpu: <><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 1v4m6-4v4M9 19v4m6-4v4M1 9h4m-4 6h4m14-6h4m-4 6h4"/></>,
   };
   return <svg className="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[kind] ?? paths.pulse}</svg>;
@@ -405,6 +406,8 @@ export default function HomePage() {
   const [connected, setConnected] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
+  const workspaceMenuRef = useRef<HTMLDivElement>(null);
   const [journeyPath, setJourneyPath] = useState<JourneyPath>('local');
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState('');
@@ -441,12 +444,29 @@ export default function HomePage() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!workspaceMenuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!workspaceMenuRef.current?.contains(event.target as Node)) setWorkspaceMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [workspaceMenuOpen]);
+
   const clearResults = () => {
     setBefore(null); setAfter(null); setComparison(null); setDiagnosis(null);
     setTrialPairs([]); setTrialReport(null); setConfirmationProgress(0);
     setControlledReport(null); setIsolationStep(0);
     setHypothesisSession(null); setFollowUpRuns([]); setHypothesisReview(null);
   };
+
+  function lockWorkspace() {
+    if (busy) return;
+    setConnected(false); setAiConfigured(false); setAccessKey('');
+    clearResults(); setHistory([]);
+    setWorkspaceMenuOpen(false);
+    setNotice('Workspace locked. Reconnect with your private access key.');
+  }
 
   const refreshHistory = useCallback(async (key: string) => {
     const result = await gateway<{ runs: ExperimentRun[] }>(key, 'history');
@@ -772,14 +792,51 @@ export default function HomePage() {
       <div className="content">
         <header className="topbar">
           {/* Brand SVG lives in public/loadpilot-logo.svg; use this mark for the supplied LoadPilot identity. */}
-          <a className="brand" href="#overview" aria-label="LoadPilot overview" onClick={() => setActiveSection('overview')}><Image className="brand-logo" src="/loadpilot-logo.svg" alt="" width={48} height={48} priority /><div><strong>LoadPilot <span className="brand-ai">AI</span></strong></div></a>
+          <a className="brand" href="#overview" aria-label="LoadPilot overview" onClick={() => { setActiveSection('overview'); setWorkspaceMenuOpen(false); }}><Image className="brand-logo" src="/loadpilot-logo.svg" alt="" width={48} height={48} priority /><div><strong>LoadPilot <span className="brand-ai">AI</span></strong></div></a>
           <nav className="top-nav" aria-label="Workspace navigation">
             {[
               ['overview', 'Overview'], ['my-application', 'Test API'], ['experiments', 'Measure'],
               ['analysis', 'Investigate'], ['history', 'History'],
-            ].map(([id, label]) => <a key={id} className={activeSection === id ? 'top-nav-active' : ''} href={'#' + id} onClick={() => setActiveSection(id)}>{label}</a>)}
+            ].map(([id, label]) => <a key={id} className={activeSection === id ? 'top-nav-active' : ''} href={'#' + id} onClick={() => { setActiveSection(id); setWorkspaceMenuOpen(false); }}>{label}</a>)}
           </nav>
-          <div className="topbar-right"><span className={'connection-dot ' + (connected ? 'online' : '')}/><span>{connected ? 'CONNECTED' : 'READY TO CONNECT'}</span><span className="topbar-divider"/><span className="user-avatar">LP</span></div>
+          <div className="topbar-right">
+            <span className={'connection-dot ' + (connected ? 'online' : '')}/>
+            <span>{connected ? 'CONNECTED' : 'READY TO CONNECT'}</span>
+            <span className="topbar-divider"/>
+            <div className="workspace-menu-wrap" ref={workspaceMenuRef}>
+              <button type="button" className="workspace-trigger" aria-label="Workspace controls"
+                aria-expanded={workspaceMenuOpen} aria-controls="workspace-controls"
+                onClick={() => setWorkspaceMenuOpen(open => !open)}
+                onKeyDown={event => { if (event.key === 'Escape') setWorkspaceMenuOpen(false); }}>
+                <span className="workspace-trigger-icon"><SymbolIcon kind="cpu"/></span>
+                <span className="workspace-trigger-label">Workspace</span>
+                <SymbolIcon kind="chevron"/>
+              </button>
+              {workspaceMenuOpen && (
+                <div className="workspace-menu-panel" id="workspace-controls" role="region" aria-label="Workspace controls"
+                  onKeyDown={event => { if (event.key === 'Escape') { setWorkspaceMenuOpen(false); document.querySelector<HTMLButtonElement>('.workspace-trigger')?.focus(); } }}>
+                  <div className="workspace-menu-heading"><span>LOADPILOT / LOCAL SESSION</span><strong>Workspace controls</strong></div>
+                  <div className="workspace-menu-statuses">
+                    <div><span>Private backend</span><strong className={connected ? 'workspace-online' : ''}>{connected ? 'Connected' : 'Not connected'}</strong></div>
+                    <div><span>Meta Model API</span><strong>{connected ? (aiConfigured ? 'Configured' : 'Not configured') : 'Check after connecting'}</strong></div>
+                    <div><span>HTTP testing policy</span><strong>Authorized local GET only</strong></div>
+                  </div>
+                  <div className="workspace-menu-links">
+                    {connected ? (
+                      <>
+                        <a href="#my-application" onClick={() => { setActiveSection('my-application'); setWorkspaceMenuOpen(false); }}><SymbolIcon kind="cpu"/> Test your API <SymbolIcon kind="arrow"/></a>
+                        <a href="#analysis" onClick={() => { setActiveSection('analysis'); setWorkspaceMenuOpen(false); }}><SymbolIcon kind="chart"/> Review investigation <SymbolIcon kind="arrow"/></a>
+                        <button type="button" onClick={lockWorkspace} disabled={Boolean(busy)}><SymbolIcon kind="lock"/> Lock workspace</button>
+                      </>
+                    ) : (
+                      <a href="#connect-workspace" onClick={() => setWorkspaceMenuOpen(false)}><SymbolIcon kind="lock"/> Connect private workspace <SymbolIcon kind="arrow"/></a>
+                    )}
+                  </div>
+                  <p className="workspace-menu-note">Local session controls only. This is not a personal account or profile.</p>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
         <main id="overview" className="dashboard">
@@ -859,7 +916,7 @@ export default function HomePage() {
             </section>
           )}
           {connected && (
-            <div className="connected-banner"><span><span className="tiny-success"/> Private backend verified · Authorized testing only · {aiConfigured ? 'Meta AI ready' : 'Meta AI not configured'}</span><button className="text-button" onClick={() => { setConnected(false); setAiConfigured(false); setAccessKey(''); clearResults(); setHistory([]); }} type="button" disabled={Boolean(busy)}>Lock workspace</button></div>
+            <div className="connected-banner"><span><span className="tiny-success"/> Private backend verified · Authorized testing only · {aiConfigured ? 'Meta AI ready' : 'Meta AI not configured'}</span><button className="text-button" onClick={lockWorkspace} type="button" disabled={Boolean(busy)}>Lock workspace</button></div>
           )}
 
           <section className="mission-control" aria-label="Choose an investigation path">

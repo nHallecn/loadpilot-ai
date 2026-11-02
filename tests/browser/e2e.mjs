@@ -114,6 +114,15 @@ async function flow() {
   await checkVisible(page.getByRole('heading', { name: 'AI cannot execute tests.' }), 'Model execution boundary is visible');
   await checkVisible(page.locator('.real-http-hero'), 'Local HTTP demo is prominent');
   await checkVisible(page.getByRole('heading', { name: 'Test your API', exact: true }), 'Customer API testing is the primary feature');
+  // The responsive workspace is truly full-width; no artificial centered max-width.
+  const dashboardWidth = await page.locator('main.dashboard').evaluate(el => el.getBoundingClientRect().width);
+  const viewportWidth = page.viewportSize()?.width ?? 0;
+  assert.ok(dashboardWidth >= viewportWidth - 5, 'Dashboard should use viewport width, not a fixed maximum.');
+  await page.getByRole('button', { name: 'Workspace controls' }).click();
+  await checkVisible(page.getByRole('region', { name: 'Workspace controls' }), 'Workspace control panel opens');
+  await checkVisible(page.getByText('Not connected', { exact: true }), 'Private backend status disclosed');
+  await page.getByRole('button', { name: 'Workspace controls' }).click();
+  console.log('PASS Full-width workspace and functional session menu');
   await checkVisible(page.locator('.hero-primary-action'), 'Primary hero action points to application testing');
   assert.equal(await page.locator('.hero-primary-action').getAttribute('href'), '#my-application');
 
@@ -135,6 +144,10 @@ async function flow() {
   await enterAccessKey(uiSecret);
   await button(/^Connect$/).click();
   await checkVisible(page.locator('.topbar-right').getByText('CONNECTED', { exact: true }), 'Private API connected');
+  await page.getByRole('button', { name: 'Workspace controls' }).click();
+  await checkVisible(page.getByText('Connected', { exact: true }), 'Workspace menu reports live connection');
+  await checkVisible(page.getByRole('region', { name: 'Workspace controls' }).getByRole('button', { name: 'Lock workspace' }), 'Functional lock action is available');
+  await page.getByRole('button', { name: 'Workspace controls' }).click();
 
   // New product capability: actual HTTP requests to a separate owner-controlled app.
   await checkVisible(page.getByText('LOCAL APP READY'), 'Operator-authorized local HTTP target is configured');
