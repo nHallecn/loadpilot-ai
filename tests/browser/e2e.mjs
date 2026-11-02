@@ -78,7 +78,7 @@ function button(pattern) {
 /** React hydration can lag behind Next.js DOMContentLoaded on CI cold starts. */
 async function enterAccessKey(key) {
   const field = page.getByLabel('Dashboard access key');
-  const connect = button(/^Connect/);
+  const connect = button(/^Connect$/);
   for (let attempt = 0; attempt < 15; attempt++) {
     await field.fill(key);
     if (await connect.isEnabled()) return;
@@ -128,13 +128,13 @@ async function flow() {
   console.log('PASS Guided scenario cards update real plan controls');
 
   await enterAccessKey('wrong-private-test-secret');
-  await button(/^Connect/).click();
+  await button(/^Connect$/).click();
   await checkVisible(page.locator('.alert'), 'Invalid access key rejected');
   assert.match(await page.locator('.alert').innerText(), /invalid dashboard access key/i);
 
   await enterAccessKey(uiSecret);
-  await button(/^Connect/).click();
-  await checkVisible(page.getByText('API CONNECTED'), 'Private API connected');
+  await button(/^Connect$/).click();
+  await checkVisible(page.locator('.topbar-right').getByText('CONNECTED', { exact: true }), 'Private API connected');
 
   // New product capability: actual HTTP requests to a separate owner-controlled app.
   await checkVisible(page.getByText('LOCAL APP READY'), 'Operator-authorized local HTTP target is configured');
