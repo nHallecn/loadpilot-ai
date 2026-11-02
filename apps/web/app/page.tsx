@@ -802,14 +802,47 @@ export default function HomePage() {
               <div className="hero-model"><span className={'pill-dot ' + (aiConfigured ? 'online' : '')}/> Powered by Meta Muse Spark 1.3 <span>·</span> No external traffic</div>
             </div>
             
-            <div className="real-http-hero" aria-label="Real HTTP demo flow">
-              <span className="real-http-kicker"><SymbolIcon kind="cpu"/> REAL HTTP · YOUR LOCAL API</span>
-              <div className="real-http-stages">
-                <div><span>01 · BEFORE</span><strong>Measure a baseline</strong><p>Bounded GET requests to your owner-configured local endpoint. Actual p95, throughput and errors.</p></div>
-                <div><span>02 · INVESTIGATE</span><strong>Review the evidence</strong><p>Inspect your service and decide what to change. No automatic fixes or tests.</p></div>
-                <div><span>03 · FOLLOW-UP</span><strong>Verify the change</strong><p>Explicitly rerun the same plan, compare measured results and optionally ask Muse to explain the difference.</p></div>
+
+            <div className="real-http-hero signal-stage" aria-label="Interactive investigation flow" onPointerMove={event => {
+              const bounds = event.currentTarget.getBoundingClientRect();
+              event.currentTarget.style.setProperty('--spot-x', ((event.clientX-bounds.left) / bounds.width*100).toFixed(1)+'%');
+              event.currentTarget.style.setProperty('--spot-y', ((event.clientY-bounds.top) / bounds.height*100).toFixed(1)+'%');
+            }}>
+              <div className="signal-stage-top">
+                <span className="signal-stage-kicker"><span className="signal-mini-orb"/> LOADPILOT / SIGNAL ROOM</span>
+                <span className="signal-stage-mode">{connected ? 'WORKSPACE CONNECTED' : 'PRIVATE DEMO · AWAITING CONNECTION'}</span>
               </div>
-              <p className="real-http-footnote"><SymbolIcon kind="shield"/> No fabricated metrics · No public traffic · Measured difference is not causal proof.</p>
+              <div className="signal-stage-core">
+                <div className="signal-orbit" aria-hidden="true">
+                  <div className="signal-orbit-halo"/>
+                  <div className="signal-orbit-ring ring-outer"/>
+                  <div className="signal-orbit-ring ring-middle"/>
+                  <div className="signal-orbit-ring ring-inner"/>
+                  <div className="signal-orbit-cross cross-horizontal"/>
+                  <div className="signal-orbit-cross cross-vertical"/>
+                  <div className="signal-orbit-center"><SymbolIcon kind="pulse"/></div>
+                  <span className="signal-orbit-ping"/>
+                </div>
+                <div className="signal-core-label">
+                  <span>INVESTIGATION / 001</span>
+                  <strong>Find the <i>signal.</i></strong>
+                  <p>Measure what happened. Challenge the hypothesis. Verify the change.</p>
+                </div>
+              </div>
+              <div className="signal-wave-box" aria-hidden="true">
+                <svg viewBox="0 0 470 65" preserveAspectRatio="none">
+                  <path className="signal-wave-grid" d="M0 16H470 M0 33H470 M0 50H470"/>
+                  <path className="signal-wave-base" d="M0 37 L47 37 L64 27 L85 44 L111 34 L135 34 L157 18 L172 45 L199 37 L229 37 L245 9 L264 55 L280 29 L299 37 L323 37 L350 25 L367 44 L390 36 L470 36"/>
+                  <path className="signal-wave-accent" d="M0 37 L47 37 L64 27 L85 44 L111 34 L135 34 L157 18 L172 45 L199 37 L229 37 L245 9 L264 55 L280 29 L299 37 L323 37 L350 25 L367 44 L390 36 L470 36"/>
+                </svg>
+                <div className="signal-wave-caption"><span>VISUALIZATION / CONCEPT ONLY</span><span>NO MEASUREMENTS UNTIL TESTED</span></div>
+              </div>
+              <div className="signal-stage-flow">
+                <div><span className="signal-step-index">01 / OBSERVE</span><strong>Run a baseline</strong><small>Bounded real HTTP</small></div>
+                <div><span className="signal-step-index">02 / REASON</span><strong>Investigate</strong><small>Review actual evidence</small></div>
+                <div><span className="signal-step-index">03 / VERIFY</span><strong>Test the change</strong><small>Matched follow-up</small></div>
+              </div>
+              <div className="signal-stage-bottom"><SymbolIcon kind="shield"/> Model guidance is evidence-checked. Execution stays in your hands.</div>
             </div>
           </section>
 
