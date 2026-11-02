@@ -772,7 +772,7 @@ export default function HomePage() {
       <div className="content">
         <header className="topbar">
           {/* Brand SVG lives in public/loadpilot-logo.svg; use this mark for the supplied LoadPilot identity. */}
-          <a className="brand" href="#overview" aria-label="LoadPilot overview" onClick={() => setActiveSection('overview')}><Image className="brand-logo" src="/loadpilot-logo.svg" alt="" width={48} height={48} priority /><div><strong>LoadPilot <span className="brand-ai">AI</span></strong><small>PERFORMANCE INTELLIGENCE</small></div></a>
+          <a className="brand" href="#overview" aria-label="LoadPilot overview" onClick={() => setActiveSection('overview')}><Image className="brand-logo" src="/loadpilot-logo.svg" alt="" width={48} height={48} priority /><div><strong>LoadPilot <span className="brand-ai">AI</span></strong></div></a>
           <nav className="top-nav" aria-label="Workspace navigation">
             {[
               ['overview', 'Overview'], ['my-application', 'Test API'], ['experiments', 'Measure'],
