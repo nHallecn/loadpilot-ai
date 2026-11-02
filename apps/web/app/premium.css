@@ -505,3 +505,21 @@ h1,h2,h3,h4 { font-family: 'Arial', 'Inter', system-ui, sans-serif; letter-spaci
   .scenario-card,.mission-path,.button,.top-nav a { transition:none !important; }
   .scenario-card:hover,.mission-path:hover,.button:hover { transform:none !important; }
 }
+
+
+/* Higher specificity for the actual API workbench than generic .panel defaults. */
+.panel.app-test-panel {
+  background:#fff; border:1px solid #dee3d9; border-radius:25px;
+  padding:clamp(23px,3.4vw,47px); box-shadow:0 20px 65px #16261c0e;
+}
+.panel.app-test-panel .app-product-head .overline { color:#167966; }
+.panel.app-test-panel .app-comparison .ai-button { margin-top:18px; }
+.panel.app-test-panel .app-evidence-actions small { max-width:350px; }
+.panel.app-test-panel .app-evidence-actions button { min-height:48px; }
+.section-top { margin-top:34px; }
+.panel h3,.panel h4 { color:#19372a; }
+.panel .chart-legend,.panel .range-head,.panel .history-table { font-size:12px; }
+@media(max-width:750px) {
+  .panel.app-test-panel { padding:20px; border-radius:18px; }
+  .signal-stage.real-http-hero { max-width:100%; }
+}
