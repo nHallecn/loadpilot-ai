@@ -8,15 +8,15 @@ LoadPilot no longer stops at explaining why a measured workload might be slow. W
 
 **Input → action → artifact → oracle:**
 
-- Input: the approved \`apps/api/examples/repair-lab/catalog.mjs\` function (inefficient product ranking) and its SHA-256 source identity
-- AI work: Meta Model API generates a full \`rankProducts\` implementation, not one of a small set of predefined options
+- Input: the approved `apps/api/examples/repair-lab/catalog.mjs` function (inefficient product ranking) and its SHA-256 source identity
+- AI work: Meta Model API generates a full `rankProducts` implementation, not one of a small set of predefined options
 - Action: after explicit human approval, execute the replacement in a Docker verification container
 - Evidence: independent correctness test across 7 scenarios, matched CPU measurements in 3 dataset sizes, and before/after timings
-- Output: evidence JSON, candidate \`.repaired.mjs\`, and a reviewable \`.patch\` only if accepted
+- Output: evidence JSON, candidate `.repaired.mjs`, and a reviewable `.patch` only if accepted
 
 The CLI enforces no-API-call-by-default and no-test-without-consent:
 
-\`\`\`bash
+```bash
 # From repository root. Prepare an authorized, private Meta API key in apps/api/.env.
 # 1. Explicit source-sharing permission. Proposal is NOT executed.
 node --env-file=apps/api/.env apps/api/scripts/repair-agent.mjs \
@@ -27,15 +27,15 @@ node --env-file=apps/api/.env apps/api/scripts/repair-agent.mjs \
 docker pull node:22-alpine
 node apps/api/scripts/repair-agent.mjs \
   --verify apps/api/reports/repair-proposal.json --approve-sandbox
-\`\`\`
+```
 
-A successful verification creates \`apps/api/reports/repair-evidence.json\`, \`repair-evidence.repaired.mjs\`, and \`repair-evidence.patch\`. All reports are ignored by Git. Inspect the patch, run additional application-level checks, and decide yourself whether to apply it. Do not apply blindly.
+A successful verification creates `apps/api/reports/repair-evidence.json`, `repair-evidence.repaired.mjs`, and `repair-evidence.patch`. All reports are ignored by Git. Inspect the patch, run additional application-level checks, and decide yourself whether to apply it. Do not apply blindly.
 
 ## Reproducible offline verification (does NOT invoke Meta)
 
 The checked-in optimized candidate is a testing control, **not an AI achievement**:
 
-\`\`\`bash
+```bash
 docker pull node:22-alpine
 node apps/api/scripts/repair-agent.mjs \
   --candidate-file apps/api/examples/repair-lab/optimized.example.mjs \
@@ -46,7 +46,7 @@ node apps/api/scripts/repair-agent.mjs \
   --candidate-file apps/api/examples/repair-lab/incorrect.example.mjs \
   --approve-sandbox --report-out /tmp/loadpilot-incorrect.json --expect-reject
 # Expected: invalid result is rejected by hidden correctness cases
-\`\`\`
+```
 
 CI tests both controls in Docker. **CI does not call Meta** and cannot establish real-world model success. A genuine model evaluation needs a separately recorded paid API call and its resulting proposal and sandbox report.
 
@@ -54,10 +54,10 @@ CI tests both controls in Docker. **CI does not call Meta** and cannot establish
 
 | Boundary | Decision / enforcement |
 | --- | --- |
-| Source sharing | Only this checked-in authorized file; requires explicit \`--send-source-to-meta\` |
+| Source sharing | Only this checked-in authorized file; requires explicit `--send-source-to-meta` |
 | Model authority | Proposes replacement source only; no paths, URLs, commands, shell or tool execution decisions |
 | Source integrity | Proposal binds to the SHA-256 of the original source; stale proposals are rejected |
-| Operator approval | Verification requires a separate \`--approve-sandbox\` command |
+| Operator approval | Verification requires a separate `--approve-sandbox` command |
 | Verification | Docker user 10001, no network, read-only image/mount, cap-drop all, no-new-privileges, process/memory/CPU/time limits |
 | Independent correctness | Oracle implementation is **not included in the Meta request**; 7 case inputs exercise sorting, tie-breaking, casing and edge values |
 | Independent benchmark | 3 workloads, 11 paired rounds, alternating baseline/candidate order, medians; pass requires 20% and 0.15 ms improvement in at least 2/3 workloads |
