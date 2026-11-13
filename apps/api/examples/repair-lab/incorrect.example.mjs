@@ -1,4 +1,4 @@
-// Intentionally broken candidate; harness MUST reject it.
-export function rankProducts(_products, _query) {
+export function rankProducts(products, query) {
+  // Deliberately violates the oracle. This negative control must be rejected.
   return [];
 }
