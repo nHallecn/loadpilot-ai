@@ -27,6 +27,20 @@ jobs:
           node --check apps/api/scripts/controlled-investigation.mjs
           node --check apps/api/scripts/ai-hypothesis-demo.mjs
           node --check apps/api/scripts/sample-owned-app.mjs
+      - name: Validate action-first repair script syntax
+        run: |
+          node --check apps/api/scripts/repair-agent.mjs
+          node --check apps/api/scripts/repair-harness.mjs
+          node --check apps/api/examples/repair-lab/catalog.mjs
+          node --check apps/api/examples/repair-lab/optimized.example.mjs
+          node --check apps/api/examples/repair-lab/incorrect.example.mjs
+      - name: Pull isolated verification image
+        run: docker pull node:22-alpine
+      - name: Action-first repair checks (offline candidates, no Meta credentials)
+        run: |
+          node apps/api/scripts/repair-agent.mjs --candidate-file apps/api/examples/repair-lab/optimized.example.mjs --approve-sandbox --report-out /tmp/repair-positive.json
+          node apps/api/scripts/repair-agent.mjs --candidate-file apps/api/examples/repair-lab/incorrect.example.mjs --approve-sandbox --report-out /tmp/repair-negative.json --expect-reject
+          node --input-type=module -e "import {readFileSync,existsSync} from 'node:fs'; const good=JSON.parse(readFileSync('/tmp/repair-positive.json'));const bad=JSON.parse(readFileSync('/tmp/repair-negative.json'));if(good.verdict.status!=='accepted'||bad.verdict.status!=='rejected'||!existsSync('/tmp/repair-positive.patch')||!good.verdict.samples||good.verdict.samples.length!==3)process.exit(1);"
       - name: Unit tests
         run: pnpm test
       - name: Typecheck

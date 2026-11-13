@@ -9,6 +9,10 @@ Meta Global AI Developer Hackathon 2026 · Indie Developer · Push the Frontier
 
 > Status: **End-to-end demo implemented**: Muse Spark planning, bounded in-process experiments, measured comparison, evidence-verified AI diagnosis, an interactive Next.js dashboard with real local HTTP testing and JSON evidence downloads, descriptive repeat-trial adjudication with checksum evidence exports, **one-factor controlled bottleneck contrasts**, and a model-guided, explicitly authorized follow-up investigation. All of these workflows are merged into the main branch. History is in-memory only. Public production deployment is not supported. All project code was authored during the October 26–November 4, 2026 hackathon.
 
+## Action-first evolution: propose a real patch, verify it, export code
+
+**New (post-hackathon, v0):** [Repair Lab](docs/REPAIR_AGENT.md) gives Meta a substantive coding task: generate an optimized implementation for an approved source module. An operator explicitly approves an isolated Docker run; an independent correctness oracle and paired CPU benchmarks either reject the candidate or export a reviewable patched module, diff and evidence. No automatic repository edits or arbitrary targets. **This is a one-file repair lab, not yet a general autonomous code repair platform.** Live model effectiveness has not been benchmarked; CI evaluates explicitly labelled offline fixtures.
+
 ## Judge demo: real local HTTP, not just a synthetic benchmark
 
 **Before → Investigation → Verified follow-up.** Start a separate Shop API locally, configure the fixed owner-consented GET endpoint, then use **Test your API** as the first screen. Capture the actual HTTP baseline, inspect measurements, make a deliberate change in the Shop API, and explicitly run a matched follow-up. Download the HTTP evidence JSON and optionally request an evidence-checked Muse Spark interpretation.
